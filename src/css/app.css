@@ -1,22 +1,30 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.1 (06-NOV-2013) 
+ * Version: 0.2 (07-NOV-2013) 
  */
 
+html {
+  overflow-y: scroll;
+}
 body {
   background-color: #eeeeee;
-  padding-top: 25px;
+  padding-top: 70px;
   padding-bottom: 60px;
 }
 .navbar-default {
   background-color: #1f277c;
+  border-color: #666666;
 }
 .navbar-default .navbar-brand, 
 .navbar-default .navbar-brand:hover {
   color: #ffffff;
 }
-.page-header {
-  border-bottom: 1px solid #c4c4c4;
+#find-store-wrap {
+  padding-top: 10px;
+}
+#content-headline {
+  font-size: 18px;
+  font-weight: bold;
 }
 #content-loading {
   padding-top: 20px;
@@ -29,7 +37,7 @@ body {
   margin-bottom: 1em;
 }
 footer .navbar-default {
-  border-top: 1px solid #666666;
+  border-bottom: 0;
 }
 .footer-nav-col {
   border-right: 1px solid #666666;
