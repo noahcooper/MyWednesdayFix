@@ -1,13 +1,13 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.2 (07-NOV-2013) 
+ * Version: 0.3 (08-NOV-2013)
  */
 
 html {
   overflow-y: scroll;
 }
 body {
-  background-color: #eeeeee;
+  background-color: #f0f0f0;
   padding-top: 70px;
   padding-bottom: 60px;
 }
@@ -27,7 +27,7 @@ body {
   font-weight: bold;
 }
 #content-loading {
-  padding-top: 20px;
+  padding: 10px 0 30px;
   text-align: center;
 }
 .feature-col img {
@@ -36,11 +36,16 @@ body {
 .feature-image-wrap {
   margin-bottom: 1em;
 }
+.issue-store-date {
+  margin-top: 0;
+}
 footer .navbar-default {
+  background-color: #ffffff;
   border-bottom: 0;
+  box-shadow: 0 -1px 3px #cccccc;
 }
 .footer-nav-col {
-  border-right: 1px solid #666666;
+  border-right: 1px solid #cccccc;
   font-size: 1.1em;
   padding: 0;
   text-align: center;
@@ -52,8 +57,10 @@ footer .navbar-default {
   border-right: none;
 }
 .footer-nav-col a {
-  color: #ffffff;
+  color: #000000;
   display: block;
   padding: 18px 0;
+}
+.footer-nav-col a:hover {
   text-decoration: none;
 }
