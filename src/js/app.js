@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.js
- * Version: 0.3 (08-NOV-2013) 
+ * Version: 0.4 (10-NOV-2013) 
  */
 
 (function($) {
@@ -19,7 +19,9 @@
     
     isLastListPage: false, 
     
-    currentIssue: {}
+    currentIssue: {}, 
+    
+    currentStore: {}
   };
   
   /* comicvine api methods */
@@ -101,12 +103,58 @@
     }
   };
   
-  /* helpers */
+  /* google places */
+  myWednesdayFix.googlePlaces = {
+    getComicStores: function(options) {
+      var settings = $.extend({
+        callback: $.noop
+      }, options || {});
+      
+      var placesService = new google.maps.places.PlacesService(document.getElementById('google-places')), 
+      placesTextSearchRequest;
+      
+      if(settings.latLng) {
+        placesTextSearchRequest = {
+          location: '', 
+          radius: '40234', /* 40,234 meters = ~25 miles */
+          query: 'comic book stores'
+        };
+      }
+      else {
+        placesTextSearchRequest = {
+          query: 'comic book stores near ' + settings.query
+        };
+      }
+      
+      placesService.textSearch(placesTextSearchRequest, settings.callback);
+    }, 
+    
+    getComicStore: function(options) {
+      var settings = $.extend({
+        callback: $.noop
+      }, options || {});
+      
+      var placesService = new google.maps.places.PlacesService(document.getElementById('google-places'));
+      
+      placesService.getDetails({
+        reference: settings.reference
+      }, settings.callback);
+    }
+  };
+  
+  /* helper functions */
   myWednesdayFix.utils = {
-    loadView: function(newView) {
+    loadView: function(newView, isPopState) {
+      /* TODO: don't reload if view is already active, just scroll to top */
       myWednesdayFix.view[newView]();
       
       myWednesdayFix.data.currentView = newView;
+      
+      if(!isPopState) {
+        history.pushState({
+          view: newView
+        }, '', window.location.href.split('?')[0] + '?view=' + newView);
+      }
     }, 
     
     showLoading: function() {
@@ -126,11 +174,46 @@
       
       myWednesdayFix.data.currentOffset = 0;
       myWednesdayFix.data.isLastListPage = false;
+    }, 
+    
+    formatTime: function(militaryTime) {
+      var militaryTimeHours = militaryTime.substring(0, 2), 
+      formattedHours = militaryTime.substring(0, 2);
+      if(militaryTimeHours == 0) {
+        formattedHours = '12';
+      }
+      else if(militaryTime.substring(0, 1) == 0) {
+        formattedHours = militaryTime.substring(1, 2);
+      }
+      else if(militaryTimeHours > 12) {
+        formattedHours = formattedHours - 12;
+      }
+      
+      return formattedHours + ':' + militaryTime.substring(2) + (militaryTimeHours >= 12 ? 'pm' : 'am');
     }
   };
   
   /* ui methods */
   myWednesdayFix.ui = {
+    buildPanel: function(options) {
+      var settings = $.extend({
+        type: 'panel-info'
+      }, options || {});
+      
+      return '<div class="panel ' + settings.type + '">' + 
+               (settings.heading ? 
+                ('<div class="panel-heading">' + 
+                   '<h3 class="panel-title">' + 
+                     settings.heading + 
+                   '</h3>' + 
+                 '</div>') : '') + 
+               (settings.body ? 
+                ('<div class="panel-body">' + 
+                   settings.body + 
+                 '</div>') : '') + 
+             '</div>';
+    }, 
+    
     buildIssuesList: function(options) {
       var settings = $.extend({
         issuesList: []
@@ -154,36 +237,30 @@
         issueNumber = this.issue_number, 
         description = this.description || '';
         
-        /* the API sometimes returns a data table of covers */
-        /* if we get that back, get rid of it */
+        /* the API sometimes returns a list of covers in a table */
+        /* if we get that back, remove it */
         /* TODO: set max length for description */
         /* TODO: remove anchors */
         description = description.split('<h4>List of covers and their creators:</h4>')[0];
         
         $('#content-wrap .row:last').append('<div class="col-sm-4 feature-col">' + 
-                                              '<div class="panel panel-info">' + 
-                                                '<div class="panel-heading">' + 
-                                                  '<h3 class="panel-title">' + 
-                                                    '<a class="view-issue" href="#issue=' + issueId + '" data-issue="' + issueId + '">' + 
-                                                      volumeName + 
-                                                      (issueNumber ? (' #' + issueNumber) : '') + 
-                                                    '</a>' + 
-                                                  '</h3>' + 
-                                                '</div>' + 
-                                                '<div class="panel-body">' + 
-                                                  (this.image.small_url ? 
-                                                   ('<div class="feature-image-wrap">' + 
-                                                      '<a href="#"><img alt="" src="' + this.image.small_url + '"></a>' + /* TODO: link */
-                                                    '</div>') : '') + 
-                                                  '<h3>In Stores ' + storeDateMonth + '/' + storeDateDate + '/' + storeDateYear + '</h3>' + 
-                                                  description + 
-                                                  '<p>' + 
-                                                    '<a class="btn btn-primary view-issue" href="#issue=' + issueId + '" data-issue="' + issueId + '">' + 
-                                                      'Read more &' + 'raquo;' + 
-                                                    '</a>' + 
-                                                  '</p>' + 
-                                                '</div>' + 
-                                              '</div>' + 
+                                              myWednesdayFix.ui.buildPanel({
+                                                heading: '<a class="view-issue" href="#" data-issue="' + issueId + '">' + 
+                                                           volumeName + 
+                                                           (issueNumber ? (' #' + issueNumber) : '') + 
+                                                         '</a>', 
+                                                body: (this.image.small_url ? 
+                                                       ('<div class="feature-image-wrap">' + 
+                                                          '<a href="#"><img alt="" src="' + this.image.small_url + '"></a>' + /* TODO: link */
+                                                        '</div>') : '') + 
+                                                      '<h3>In Stores ' + storeDateMonth + '/' + storeDateDate + '/' + storeDateYear + '</h3>' + 
+                                                      description + 
+                                                      '<p>' + 
+                                                        '<a class="btn btn-primary view-issue" href="#" data-issue="' + issueId + '">' + 
+                                                          'Read more &' + 'raquo;' + 
+                                                        '</a>' + 
+                                                      '</p>'
+                                              }) + 
                                             '</div>');
       });
     }, 
@@ -204,26 +281,33 @@
       
       $('#content-wrap').append('<div class="row">' + 
                                   '<div class="col-xs-12 feature-col">' + 
-                                    '<div class="panel panel-info">' + 
-                                      '<div class="panel-heading">' + 
-                                        '<h3 class="panel-title">' + 
-                                          volumeName + 
-                                          (issueNumber ? (' #' + issueNumber) : '') +  
-                                        '</h3>' + 
-                                      '</div>' + 
-                                      '<div class="panel-body">' + 
-                                        (issue.image.medium_url ? 
-                                         ('<div class="col-md-6 feature-image-wrap">' + 
-                                            '<a href="#"><img alt="" src="' + issue.image.medium_url + '"></a>' + /* TODO: link */
-                                          '</div>') : '') + 
-                                        '<h3 class="issue-store-date">' + 
-                                          'In Stores ' + storeDateMonth + '/' + storeDateDate + '/' + storeDateYear + 
-                                        '</h3>' + 
-                                        (issue.description || '') + 
-                                      '</div>' + 
-                                    '</div>' + 
+                                    myWednesdayFix.ui.buildPanel({
+                                      heading: volumeName + (issueNumber ? (' #' + issueNumber) : ''), 
+                                      body: (issue.image.medium_url ? 
+                                             ('<div class="col-md-6 feature-image-wrap">' + 
+                                                '<a href="#"><img alt="" src="' + issue.image.medium_url + '"></a>' + /* TODO: link */
+                                              '</div>') : '') + 
+                                            '<h3 class="issue-store-date">' + 
+                                              'In Stores ' + storeDateMonth + '/' + storeDateDate + '/' + storeDateYear + 
+                                            '</h3>' + 
+                                            '<div class="issue-desc">' + 
+                                              (issue.description || '') + 
+                                            '</div>'
+                                    }) + 
                                   '</div>' + 
                                 '</div>');
+      
+      /* the API sometimes returns a list of covers in a table */
+      /* if we get that back, turn it into a bootstrap table */
+      /* also, remove the "Sidebar Location" column */
+      /* TODO: remove anchors */
+      $('.issue-desc table').addClass('table');
+      $('.issue-desc table th').each(function(headingIndex) {
+        if($(this).is(':contains("Sidebar Location")')) {
+          $(this).closest('table').find('td:nth-child(' + (headingIndex + 1) + ')').remove();
+          $(this).remove();
+        }
+      });
       
       $.each(issue.person_credits, function(personIndex) {
         $('#content-wrap .panel-body').append((personIndex > 0 ? '<br>' : '') + 
@@ -233,19 +317,125 @@
       });
       
       /* TODO: add back to list button */
+    }, 
+    
+    buildStoreLookup: function() {
+      $('#content-wrap').append('<div class="panel panel-info">' + 
+                                  '<div class="panel-body">' + 
+                                    '<div class="pull-right" id="powered-by-google">' + 
+                                      '<img alt="Search Powered by Google" src="images/powered-by-google-on-white.png">' + 
+                                    '</div>' + 
+                                    '<form id="store-lookup">' + 
+                                      '<div class="form-group">' + 
+                                        '<input type="text" class="form-control" id="lookup-query" placeholder="Enter a city, state, or ZIP code">' + 
+                                      '</div>' + 
+                                      '<button type="submit" class="btn btn-default">Search</button>' + 
+                                    '</form>' + 
+                                  '</div>' + 
+                                  '<div class="list-group" id="store-results-list"></div>' + 
+                                '</div>');
+      
+      $('#store-lookup').submit(function(e) {
+        e.preventDefault();
+        
+        $('#store-results-list a').remove();
+        
+        if($('#lookup-query').val().length > 0) {
+          myWednesdayFix.utils.showLoading();
+          
+          myWednesdayFix.googlePlaces.getComicStores({
+            query: $('#lookup-query').val(), 
+            callback: function(places) {
+              myWednesdayFix.utils.hideLoading();
+              
+              $.each(places, function() {
+                $('#store-results-list').append('<a class="list-group-item view-store" href="#" data-reference="' + this.reference + '">' + 
+                                                  '<h4 class="list-group-item-heading">' + 
+                                                    this.name + 
+                                                  '</h4>' + 
+                                                  '<p class="list-group-item-text">' + 
+                                                    this.formatted_address.split(', United States')[0] + 
+                                                  '</p>' + 
+                                                '</a>');
+              });
+            }
+          });
+        }
+      });
+    }, 
+    
+    buildStore: function(options) {
+      var settings = $.extend({
+        place: {}
+      }, options || {}), 
+      place = settings.place, 
+      phoneNumber = place.formatted_phone_number, 
+      website = place.website, 
+      hours = place.opening_hours, 
+      hasHours = hours ? true : false, 
+      isOpen, 
+      dailyHours;
+      if(hasHours) {
+        isOpen = hours.open_now, 
+        dailyHours = hours.periods;
+      }
+      
+      /* TODO: add back to list button */
+      
+      $('#content-wrap').append('<div class="row">' + 
+                                  '<div class="col-xs-12 feature-col">' + 
+                                    myWednesdayFix.ui.buildPanel({
+                                      heading: place.name, 
+                                      body: '<p><span class="glyphicon glyphicon-pushpin"></span> ' + 
+                                            place.formatted_address.split(', United States')[0] + '</p>' + 
+                                            (phoneNumber ? ('<p><span class="glyphicon glyphicon-earphone"></span> ' + 
+                                             phoneNumber + '</p>') : '') + 
+                                            (website ? ('<p><span class="glyphicon glyphicon-globe"></span> ' + 
+                                             '<a target="_blank" href="' + website + '">' + website + '</a></p>') : '') + 
+                                            (hasHours ? 
+                                             ((isOpen ? 
+                                               '<p class="text-success">This store is open now</p>' : 
+                                               '<p class="text-danger">This store is currently closed</p>') + 
+                                              '<p><strong>Hours:</strong></p>' + 
+                                              '<p>Monday: ' + 
+                                              (dailyHours[1] ? 
+                                               (myWednesdayFix.utils.formatTime(dailyHours[1].open.time) + 
+                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[1].close.time)) : 'Closed') + '<br>' + 
+                                              'Tuesday: ' + 
+                                              (dailyHours[2] ? 
+                                               (myWednesdayFix.utils.formatTime(dailyHours[2].open.time) + 
+                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[2].close.time)) : 'Closed') + '<br>' + 
+                                              'Wednesday: ' + 
+                                              (dailyHours[3] ? 
+                                               (myWednesdayFix.utils.formatTime(dailyHours[3].open.time) + 
+                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[3].close.time)) : 'Closed') + '<br>' + 
+                                              'Thursday: ' + 
+                                              (dailyHours[4] ? 
+                                               (myWednesdayFix.utils.formatTime(dailyHours[4].open.time) + 
+                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[4].close.time)) : 'Closed') + '<br>' + 
+                                              'Friday: ' + 
+                                              (dailyHours[5] ? 
+                                               (myWednesdayFix.utils.formatTime(dailyHours[5].open.time) + 
+                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[5].close.time)) : 'Closed') + '<br>' + 
+                                              'Saturday: ' + 
+                                              (dailyHours[6] ? 
+                                               (myWednesdayFix.utils.formatTime(dailyHours[6].open.time) + 
+                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[6].close.time)) : 'Closed') + '<br>' + 
+                                              'Sunday: ' + 
+                                              (dailyHours[0] ? 
+                                               (myWednesdayFix.utils.formatTime(dailyHours[0].open.time) + 
+                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[0].close.time)) : 'Closed') + '</p>') : '')
+                                            /* TODO: more info */
+                                    }) + 
+                                  '</div>' + 
+                                '</div>');
+      
+      /* TODO: add back to list button */
     }
   };
   
   /* view handlers */
   myWednesdayFix.view = {
-    findStore: function() {
-      myWednesdayFix.utils.setHeadline('Find a Store');
-      
-      myWednesdayFix.utils.resetContent();
-      
-      /* TODO */
-    }, 
-    
     thisWeek: function() {
       myWednesdayFix.utils.setHeadline('New This Week');
       
@@ -298,32 +488,74 @@
           });
         }
       });
+    }, 
+    
+    findStore: function() {
+      myWednesdayFix.utils.setHeadline('Find a Comic Book Store');
+      
+      myWednesdayFix.utils.resetContent();
+      
+      myWednesdayFix.ui.buildStoreLookup();
+    }, 
+    
+    viewStore: function() {
+      myWednesdayFix.utils.resetContent();
+      
+      myWednesdayFix.utils.showLoading();
+      
+      myWednesdayFix.googlePlaces.getComicStore({
+        reference: myWednesdayFix.data.currentStore.reference, 
+        callback: function(place) {
+          myWednesdayFix.utils.hideLoading();
+          
+          myWednesdayFix.ui.buildStore({
+            place: place
+          });
+        }
+      });
     }
   };
   
-  /* onload, default to the thisWeek view */
-  myWednesdayFix.view.thisWeek();
+  /* default to the thisWeek view */
+  /* TODO: check for view in URL onload */
+  myWednesdayFix.utils.loadView('thisWeek');
+  
+  /* load view onpopstate */
+  $(window).on('popstate', function() {
+    if(history.state && 
+       history.state.view && 
+       history.state.view != myWednesdayFix.data.currentView) {
+      myWednesdayFix.utils.loadView(history.state.view, true);
+    }
+  });
   
   /* handle onclick event for nav links that change views */
-  $('.app-nav').click(function() {
-    /* TODO: prevent default */
+  $('.app-nav').click(function(e) {
+    e.preventDefault();
     
-    /* TODO: don't reload if view is already active, just scroll to top */
     myWednesdayFix.utils.loadView($(this).data('view'));
   });
   
   /* handle onclick event for links that load an issue */
   $('#content-wrap').on('click', '.view-issue', function(e) {
-    /* TODO: prevent default */
+    e.preventDefault();
     
-    /* TODO: don't reload if view is already active, just scroll to top */
     myWednesdayFix.data.currentIssue.issueId = $(e.target).data('issue');
     myWednesdayFix.utils.loadView('viewIssue');
   });
   
-  /* when the user is near the bottom of the list views, automatically get the next page of results if there is one */
+  /* handle onclick event for links that load a store */
+  $('#content-wrap').on('click', '.view-store', function(e) {
+    e.preventDefault();
+    
+    myWednesdayFix.data.currentStore.reference = $(e.target).closest('.view-store').data('reference');
+    myWednesdayFix.utils.loadView('viewStore');
+  });
+  
+  /* when the user is near the bottom of a list view, automatically get the next page of results */
+  /* don't get next page if the list is in the process of loading, or, if we're on the last page */
   $(window).scroll(function() {
-    if(($(window).scrollTop() + $(window).height()) > ($(document).height() - 100) && 
+    if(($(window).scrollTop() + $(window).height()) > ($(document).height() - 200) && 
        (myWednesdayFix.data.currentView === 'thisWeek' || 
         myWednesdayFix.data.currentView === 'comingSoon') && 
        !myWednesdayFix.data.listIsLoading && 

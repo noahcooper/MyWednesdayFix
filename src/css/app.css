@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.3 (08-NOV-2013)
+ * Version: 0.4 (10-NOV-2013)
  */
 
 html {
@@ -39,6 +39,12 @@ body {
 .issue-store-date {
   margin-top: 0;
 }
+.issue-desc .table {
+  width: auto;
+}
+#powered-by-google {
+  margin-bottom: 3px;
+}
 footer .navbar-default {
   background-color: #ffffff;
   border-bottom: 0;
@@ -49,9 +55,6 @@ footer .navbar-default {
   font-size: 1.1em;
   padding: 0;
   text-align: center;
-}
-.footer-nav-col.active {
-  /* TODO: background-color */
 }
 .footer-nav-col:last-child {
   border-right: none;
