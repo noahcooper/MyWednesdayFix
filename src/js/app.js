@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.js
- * Version: 0.4 (10-NOV-2013) 
+ * Version: 0.5 (30-NOV-2013) 
  */
 
 (function($) {
@@ -41,23 +41,23 @@
       todayMonth = today.getMonth(), 
       todayDate = today.getDate(), 
       todayDay = today.getDay(), 
-      lastSunday = new Date(todayYear, 
-                                todayMonth, 
-                                todayDate - todayDay), 
-      nextSaturday = new Date(todayYear, 
-                              todayMonth, 
-                              todayDate + (6 - todayDay)), 
-      nextSunday = new Date(todayYear, 
+      lastTuesday = new Date(todayYear, 
+                             todayMonth, 
+                             (todayDay < 2 ? ((todayDate - todayDay) - 5) : ((todayDate - todayDay) + 2))), 
+      thisMonday = new Date(todayYear, 
                             todayMonth, 
-                            todayDate + (7 - todayDay)), 
+                            (todayDay < 2 ? ((todayDate - todayDay) + 1) : (todayDate + (8 - todayDay)))), 
+      nextTuesday = new Date(todayYear, 
+                             todayMonth, 
+                             (todayDay < 2 ? ((todayDate - todayDay) + 2) : (todayDate + (9 - todayDay)))), 
       filterString = 'store_date:';
       if(settings.dateFilter === 'future') {
-        filterString += nextSunday.getFullYear() + '-' + (nextSunday.getMonth() + 1) + '-' + nextSunday.getDate() + '|' + 
-                        (nextSunday.getFullYear() + 1) + '-' + (nextSunday.getMonth() + 1) + '-' + nextSunday.getDate();
+        filterString += nextTuesday.getFullYear() + '-' + (nextTuesday.getMonth() + 1) + '-' + nextTuesday.getDate() + '|' + 
+                        (nextTuesday.getFullYear() + 1) + '-' + (nextTuesday.getMonth() + 1) + '-' + nextTuesday.getDate();
       }
       else {
-        filterString += lastSunday.getFullYear() + '-' + (lastSunday.getMonth() + 1) + '-' + lastSunday.getDate() + '|' + 
-                        nextSaturday.getFullYear() + '-' + (nextSaturday.getMonth() + 1) + '-' + nextSaturday.getDate();
+        filterString += lastTuesday.getFullYear() + '-' + (lastTuesday.getMonth() + 1) + '-' + lastTuesday.getDate() + '|' + 
+                        thisMonday.getFullYear() + '-' + (thisMonday.getMonth() + 1) + '-' + thisMonday.getDate();
       }
       
       $.ajax({
