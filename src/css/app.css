@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.5 (30-NOV-2013)
+ * Version: 0.6 (01-DEC-2013)
  */
 
 html {
@@ -31,13 +31,22 @@ body {
   text-align: center;
 }
 .feature-col img {
-  max-width: 100%;
+  width: 100%;
 }
 .feature-image-wrap {
   margin-bottom: 1em;
+  padding-left: 0;
+  text-align: center;
 }
 .issue-store-date {
   margin-top: 0;
+}
+.issue-desc em {
+  font-style: normal;
+}
+.issue-desc strong, 
+.issue-desc b {
+  font-weight: normal;
 }
 .issue-desc .table {
   width: auto;
@@ -48,6 +57,7 @@ body {
 footer .navbar-default {
   background-color: #ffffff;
   border-bottom: 0;
+  border-color: #c7c7c7;
   box-shadow: 0 -1px 3px #cccccc;
 }
 .footer-nav-col {
@@ -66,4 +76,10 @@ footer .navbar-default {
 }
 .footer-nav-col a:hover {
   text-decoration: none;
+}
+
+@media (max-width: 991px) {
+  .feature-image-wrap {
+    padding-right: 0;
+  }
 }

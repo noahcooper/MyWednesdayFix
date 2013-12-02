@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.js
- * Version: 0.5 (30-NOV-2013) 
+ * Version: 0.6 (01-DEC-2013) 
  */
 
 (function($) {
@@ -41,23 +41,23 @@
       todayMonth = today.getMonth(), 
       todayDate = today.getDate(), 
       todayDay = today.getDay(), 
-      lastTuesday = new Date(todayYear, 
-                             todayMonth, 
-                             (todayDay < 2 ? ((todayDate - todayDay) - 5) : ((todayDate - todayDay) + 2))), 
-      thisMonday = new Date(todayYear, 
-                            todayMonth, 
-                            (todayDay < 2 ? ((todayDate - todayDay) + 1) : (todayDate + (8 - todayDay)))), 
+      lastWednesday = new Date(todayYear, 
+                               todayMonth, 
+                               (todayDay < 3 ? ((todayDate - todayDay) - 4) : ((todayDate - todayDay) + 3))), 
       nextTuesday = new Date(todayYear, 
                              todayMonth, 
                              (todayDay < 2 ? ((todayDate - todayDay) + 2) : (todayDate + (9 - todayDay)))), 
+      nextWednesday = new Date(todayYear, 
+                               todayMonth, 
+                               (todayDay < 3 ? ((todayDate - todayDay) + 3) : (todayDate + (10 - todayDay)))), 
       filterString = 'store_date:';
       if(settings.dateFilter === 'future') {
-        filterString += nextTuesday.getFullYear() + '-' + (nextTuesday.getMonth() + 1) + '-' + nextTuesday.getDate() + '|' + 
-                        (nextTuesday.getFullYear() + 1) + '-' + (nextTuesday.getMonth() + 1) + '-' + nextTuesday.getDate();
+        filterString += nextWednesday.getFullYear() + '-' + (nextWednesday.getMonth() + 1) + '-' + nextWednesday.getDate() + '|' + 
+                        (nextWednesday.getFullYear() + 1) + '-' + (nextWednesday.getMonth() + 1) + '-' + nextWednesday.getDate();
       }
       else {
-        filterString += lastTuesday.getFullYear() + '-' + (lastTuesday.getMonth() + 1) + '-' + lastTuesday.getDate() + '|' + 
-                        thisMonday.getFullYear() + '-' + (thisMonday.getMonth() + 1) + '-' + thisMonday.getDate();
+        filterString += lastWednesday.getFullYear() + '-' + (lastWednesday.getMonth() + 1) + '-' + lastWednesday.getDate() + '|' + 
+                        nextTuesday.getFullYear() + '-' + (nextTuesday.getMonth() + 1) + '-' + nextTuesday.getDate();
       }
       
       $.ajax({
@@ -150,7 +150,7 @@
       
       myWednesdayFix.data.currentView = newView;
       
-      if(!isPopState) {
+      if(window.history && history.pushState && !isPopState) {
         history.pushState({
           view: newView
         }, '', window.location.href.split('?')[0] + '?view=' + newView);
@@ -235,13 +235,51 @@
         var issueId = this.api_detail_url.split('/issue/')[1].split('/')[0], 
         volumeName = this.volume.name, 
         issueNumber = this.issue_number, 
-        description = this.description || '';
+        description = this.description || '', 
+        descriptionTextLength = 0, 
+        shortDescription = '', 
+        shortDescriptionEnd, 
         
-        /* the API sometimes returns a list of covers in a table */
-        /* if we get that back, remove it */
-        /* TODO: set max length for description */
-        /* TODO: remove anchors */
-        description = description.split('<h4>List of covers and their creators:</h4>')[0];
+        trimOnPunctuation = function(string) {
+          var lastPunctuationIndex = string.lastIndexOf('. ');
+          
+          if(string.lastIndexOf('? ') > lastPunctuationIndex) {
+            lastPunctuationIndex = string.lastIndexOf('? ');
+          }
+          if(string.lastIndexOf('! ') > lastPunctuationIndex) {
+            lastPunctuationIndex = string.lastIndexOf('! ');
+          }
+          string = string.substr(0, lastPunctuationIndex + 1);
+          
+          return string;
+        };
+        
+        $('<div>' + description + '</div>').find('p, h4').each(function() {
+          /* the API sometimes returns a list of covers in a table */
+          /* if we get that back, remove it */
+          if(!shortDescriptionEnd) {
+            if($(this).is('h4:contains("List of covers and their creators")')) {
+              shortDescriptionEnd = true;
+            }
+            else {
+              descriptionTextLength += $(this).text().length;
+              
+              if(descriptionTextLength >= 475) {
+                var trimmedText = $(this).text().substr(0, $(this).text().length - (descriptionTextLength - 475)) + ' ';
+                
+                trimmedText = trimOnPunctuation(trimmedText);
+                
+                $(this).html(trimmedText);
+                
+                shortDescriptionEnd = true;
+              }
+              
+              shortDescription += $(this).wrap('<div>').parent().html();
+            }
+          }
+          
+          /* TODO: remove anchors */
+        });
         
         $('#content-wrap .row:last').append('<div class="col-sm-4 feature-col">' + 
                                               myWednesdayFix.ui.buildPanel({
@@ -251,10 +289,14 @@
                                                          '</a>', 
                                                 body: (this.image.small_url ? 
                                                        ('<div class="feature-image-wrap">' + 
-                                                          '<a href="#"><img alt="" src="' + this.image.small_url + '"></a>' + /* TODO: link */
+                                                          '<a class="view-issue" href="#" data-issue="' + issueId + '">' + 
+                                                            '<img alt="" src="' + this.image.small_url + '">' + 
+                                                          '</a>' + 
                                                         '</div>') : '') + 
                                                       '<h3>In Stores ' + storeDateMonth + '/' + storeDateDate + '/' + storeDateYear + '</h3>' + 
-                                                      description + 
+                                                      '<div class="issue-desc">' + 
+                                                        shortDescription + 
+                                                      '</div>' + 
                                                       '<p>' + 
                                                         '<a class="btn btn-primary view-issue" href="#" data-issue="' + issueId + '">' + 
                                                           'Read more &' + 'raquo;' + 
@@ -285,7 +327,7 @@
                                       heading: volumeName + (issueNumber ? (' #' + issueNumber) : ''), 
                                       body: (issue.image.medium_url ? 
                                              ('<div class="col-md-6 feature-image-wrap">' + 
-                                                '<a href="#"><img alt="" src="' + issue.image.medium_url + '"></a>' + /* TODO: link */
+                                                '<img alt="" src="' + issue.image.medium_url + '">' + 
                                               '</div>') : '') + 
                                             '<h3 class="issue-store-date">' + 
                                               'In Stores ' + storeDateMonth + '/' + storeDateDate + '/' + storeDateYear + 
@@ -297,10 +339,12 @@
                                   '</div>' + 
                                 '</div>');
       
+      /* TODO: remove anchors */
+      $('.issue-desc figure, .issue-desc img, .issue-desc figcaption').remove();
+      
       /* the API sometimes returns a list of covers in a table */
       /* if we get that back, turn it into a bootstrap table */
       /* also, remove the "Sidebar Location" column */
-      /* TODO: remove anchors */
       $('.issue-desc table').addClass('table');
       $('.issue-desc table th').each(function(headingIndex) {
         if($(this).is(':contains("Sidebar Location")')) {
@@ -374,11 +418,24 @@
       hours = place.opening_hours, 
       hasHours = hours ? true : false, 
       isOpen, 
-      dailyHours;
+      dailyHours, 
+      reviews = place.reviews || [], 
+      totalNumRatings = 0, 
+      totalRating;
       if(hasHours) {
         isOpen = hours.open_now, 
         dailyHours = hours.periods;
       }
+      $.each(reviews, function() {
+        if(this.rating) {
+          if(!totalRating) {
+            totalRating = 0;
+          }
+          totalNumRatings++;
+          totalRating += Number(this.rating);
+        }
+      });
+      totalRating = Math.round(totalRating / totalNumRatings);
       
       /* TODO: add back to list button */
       
@@ -424,11 +481,32 @@
                                               'Sunday: ' + 
                                               (dailyHours[0] ? 
                                                (myWednesdayFix.utils.formatTime(dailyHours[0].open.time) + 
-                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[0].close.time)) : 'Closed') + '</p>') : '')
-                                            /* TODO: more info */
+                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[0].close.time)) : 'Closed') + '</p>') : '') + 
+                                            (totalRating ? '<div id="store-rating"><p></p></div><div id="store-reviews"></div>' : '')
                                     }) + 
                                   '</div>' + 
                                 '</div>');
+      if(totalRating) {
+        for(var i = 0; i < 5; i++) {
+          $('#store-rating p').append('<span class="glyphicon glyphicon-star' + (i >= totalRating ? '-empty' : '') + '"></span>');
+        }
+        $('#store-rating p').append(' <span class="store-num-reviews">' + 
+                                     reviews.length + ' review' + (reviews.length > 1 ? 's' : '') + 
+                                   '</span>');
+        
+        $.each(reviews, function() {
+          var reviewDate = new Date(0);
+          reviewDate.setUTCSeconds(this.time);
+          $('#store-reviews').append('<div class="store-review-name">' + 
+                                       '<strong>' + this.author_name + '</strong> ' + 
+                                       (reviewDate.getMonth() + 1) + '/' + reviewDate.getDate() + '/' + reviewDate.getFullYear() + 
+                                     '</div>' + 
+                                     /* TODO: show review's rating */
+                                     '<div class="store-review-text">' + 
+                                       '<p>' + this.text + '</p>' + 
+                                     '</div>');
+        });
+      }
       
       /* TODO: add back to list button */
     }
@@ -540,7 +618,7 @@
   $('#content-wrap').on('click', '.view-issue', function(e) {
     e.preventDefault();
     
-    myWednesdayFix.data.currentIssue.issueId = $(e.target).data('issue');
+    myWednesdayFix.data.currentIssue.issueId = $(e.target).closest('a').data('issue');
     myWednesdayFix.utils.loadView('viewIssue');
   });
   
@@ -555,7 +633,7 @@
   /* when the user is near the bottom of a list view, automatically get the next page of results */
   /* don't get next page if the list is in the process of loading, or, if we're on the last page */
   $(window).scroll(function() {
-    if(($(window).scrollTop() + $(window).height()) > ($(document).height() - 200) && 
+    if(($(window).scrollTop() + $(window).height()) > ($(document).height() - 400) && 
        (myWednesdayFix.data.currentView === 'thisWeek' || 
         myWednesdayFix.data.currentView === 'comingSoon') && 
        !myWednesdayFix.data.listIsLoading && 
