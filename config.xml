@@ -4,4 +4,5 @@
   <description>For comic book junkies.</description>
   <author href="http://mywednesdayfix.com" email="app@mywednesdayfix.com">Noah Cooper</author>
   <preference name="fullscreen" value="true" />
+  <preference name="permissions" value="none" />
 </widget>
