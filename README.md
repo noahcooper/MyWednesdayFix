@@ -18,6 +18,8 @@ The app is built using:
 TODOs
 -----
 
+ * Create app icon and splash screen
+ * Open links (e.g. store websites) in a new browser window
  * Find a way to filter out issues that are not for a U.S. audience (e.g. all of the Japanese Manga and European comics with cover prices in GBP)
  * Find a way to filter out digital comics
  * Find a way to sort issues alphabetically, or at least in some more logical order than the default sort
