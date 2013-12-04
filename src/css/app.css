@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.6 (01-DEC-2013)
+ * Version: 0.7.0 (04-DEC-2013)
  */
 
 html {
@@ -81,5 +81,11 @@ footer .navbar-default {
 @media (max-width: 991px) {
   .feature-image-wrap {
     padding-right: 0;
+  }
+}
+@media (max-width: 767px) {
+  #content-container {
+    padding-right: 10px;
+    padding-left: 10px;
   }
 }

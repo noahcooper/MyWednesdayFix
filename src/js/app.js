@@ -1,19 +1,53 @@
 /* 
  * MyWednesdayFix - app.js
- * Version: 0.6 (01-DEC-2013) 
+ * Version: 0.7.0 (04-DEC-2013)
  */
 
 (function($) {
   'use strict';
   
+  /* get a week range, relative to this week */
+  var getWeek = function(weeksBack) {
+    weeksBack = weeksBack || 0;
+    
+    var daysBack = 7 * weeksBack, 
+    today = new Date(), 
+    todayYear = today.getFullYear(), 
+    todayMonth = today.getMonth(), 
+    todayDate = today.getDate(), 
+    todayDay = today.getDay(), 
+    wednesdayDate = new Date(todayYear, 
+                             todayMonth, 
+                             (todayDay < 3 ? ((todayDate - todayDay) - 4) : ((todayDate - todayDay) + 3))), 
+    tuesdayDate = new Date(todayYear, 
+                           todayMonth, 
+                           (todayDay < 2 ? ((todayDate - todayDay) + 2) : (todayDate + (9 - todayDay))));
+    
+    wednesdayDate.setDate(wednesdayDate.getDate() - daysBack);
+    tuesdayDate.setDate(tuesdayDate.getDate() - daysBack);
+    
+    return {
+      startDate: wednesdayDate, 
+      endDate: tuesdayDate
+    };
+  }, 
+  
+  /* get the name of the specified month */
+  getMonthName = function(monthNum) {
+    return ['January', 'February', 'March', 'April', 'May', 'June', 
+            'July', 'August', 'September', 'October', 'November', 'December'][monthNum];
+  }, 
+  
   /* establish namespace for the app */
-  var myWednesdayFix = {};
+  myWednesdayFix = {};
   
   /* state info and other app data */
   myWednesdayFix.data = {
     currentView: 'thisWeek', 
     
-    currentListOffset: '0', 
+    filterWeek: getWeek(), 
+    
+    currentOffset: 0, 
     
     listIsLoading: true, 
     
@@ -29,36 +63,22 @@
     /* get a list of issues sorted by store_date */
     getIssues: function(options) {
       var settings = $.extend({
-        dateFilter: 'current', 
+        filterWeek: myWednesdayFix.data.filterWeek, 
         offset: '0', 
         callback: $.noop
       }, options || {});
       
       myWednesdayFix.data.listIsLoading = true;
       
-      var today = new Date(), 
-      todayYear = today.getFullYear(), 
-      todayMonth = today.getMonth(), 
-      todayDate = today.getDate(), 
-      todayDay = today.getDay(), 
-      lastWednesday = new Date(todayYear, 
-                               todayMonth, 
-                               (todayDay < 3 ? ((todayDate - todayDay) - 4) : ((todayDate - todayDay) + 3))), 
-      nextTuesday = new Date(todayYear, 
-                             todayMonth, 
-                             (todayDay < 2 ? ((todayDate - todayDay) + 2) : (todayDate + (9 - todayDay)))), 
-      nextWednesday = new Date(todayYear, 
-                               todayMonth, 
-                               (todayDay < 3 ? ((todayDate - todayDay) + 3) : (todayDate + (10 - todayDay)))), 
-      filterString = 'store_date:';
-      if(settings.dateFilter === 'future') {
-        filterString += nextWednesday.getFullYear() + '-' + (nextWednesday.getMonth() + 1) + '-' + nextWednesday.getDate() + '|' + 
-                        (nextWednesday.getFullYear() + 1) + '-' + (nextWednesday.getMonth() + 1) + '-' + nextWednesday.getDate();
-      }
-      else {
-        filterString += lastWednesday.getFullYear() + '-' + (lastWednesday.getMonth() + 1) + '-' + lastWednesday.getDate() + '|' + 
-                        nextTuesday.getFullYear() + '-' + (nextTuesday.getMonth() + 1) + '-' + nextTuesday.getDate();
-      }
+      var filterWeekStart = settings.filterWeek.startDate, 
+      filterWeekEnd = settings.filterWeek.endDate, 
+      filterString = 'store_date:' + 
+                     filterWeekStart.getFullYear() + '-' + 
+                     (filterWeekStart.getMonth() + 1) + '-' + 
+                     filterWeekStart.getDate() + '|' + 
+                     filterWeekEnd.getFullYear() + '-' + 
+                     (filterWeekEnd.getMonth() + 1) + '-' + 
+                     filterWeekEnd.getDate();
       
       $.ajax({
         dataType: 'jsonp', 
@@ -145,10 +165,10 @@
   /* helper functions */
   myWednesdayFix.utils = {
     loadView: function(newView, isPopState) {
+      myWednesdayFix.data.currentView = newView;
+      
       /* TODO: don't reload if view is already active, just scroll to top */
       myWednesdayFix.view[newView]();
-      
-      myWednesdayFix.data.currentView = newView;
       
       if(window.history && history.pushState && !isPopState) {
         history.pushState({
@@ -421,21 +441,23 @@
       dailyHours, 
       reviews = place.reviews || [], 
       totalNumRatings = 0, 
-      totalRating;
+      totalRating = place.rating;
       if(hasHours) {
         isOpen = hours.open_now, 
         dailyHours = hours.periods;
       }
-      $.each(reviews, function() {
-        if(this.rating) {
-          if(!totalRating) {
-            totalRating = 0;
+      if(!totalRating && reviews.length > 0) {
+        $.each(reviews, function() {
+          if(this.rating) {
+            if(!totalRating) {
+              totalRating = 0;
+            }
+            totalNumRatings++;
+            totalRating += Number(this.rating);
           }
-          totalNumRatings++;
-          totalRating += Number(this.rating);
-        }
-      });
-      totalRating = Math.round(totalRating / totalNumRatings);
+        });
+        totalRating = Math.round(totalRating / totalNumRatings);
+      }
       
       /* TODO: add back to list button */
       
@@ -482,17 +504,27 @@
                                               (dailyHours[0] ? 
                                                (myWednesdayFix.utils.formatTime(dailyHours[0].open.time) + 
                                                 ' to ' + myWednesdayFix.utils.formatTime(dailyHours[0].close.time)) : 'Closed') + '</p>') : '') + 
-                                            (totalRating ? '<div id="store-rating"><p></p></div><div id="store-reviews"></div>' : '')
+                                            (totalRating ? ('<div id="store-rating">' + 
+                                                              '<p><strong>Rating:</strong></p>' + 
+                                                            '</div>' + 
+                                                            '<div id="store-reviews">' + 
+                                                              '<p><strong>Reviews:</strong></p>' + 
+                                                            '</div>') : '')
                                     }) + 
                                   '</div>' + 
                                 '</div>');
       if(totalRating) {
-        for(var i = 0; i < 5; i++) {
-          $('#store-rating p').append('<span class="glyphicon glyphicon-star' + (i >= totalRating ? '-empty' : '') + '"></span>');
-        }
-        $('#store-rating p').append(' <span class="store-num-reviews">' + 
-                                     reviews.length + ' review' + (reviews.length > 1 ? 's' : '') + 
-                                   '</span>');
+        var buildStars = function(numStars) {
+          var starsHtml = '';
+          
+          for(var i = 0; i < 5; i++) {
+            starsHtml += '<span class="glyphicon glyphicon-star' + (i >= numStars ? '-empty' : '') + '"></span>';
+          }
+          
+          return starsHtml;
+        };
+        
+        $('#store-rating').append('<p>' + buildStars(totalRating) + '</p>');
         
         $.each(reviews, function() {
           var reviewDate = new Date(0);
@@ -501,7 +533,7 @@
                                        '<strong>' + this.author_name + '</strong> ' + 
                                        (reviewDate.getMonth() + 1) + '/' + reviewDate.getDate() + '/' + reviewDate.getFullYear() + 
                                      '</div>' + 
-                                     /* TODO: show review's rating */
+                                     (this.rating ? buildStars(this.rating) : '') + 
                                      '<div class="store-review-text">' + 
                                        '<p>' + this.text + '</p>' + 
                                      '</div>');
@@ -521,6 +553,8 @@
       
       myWednesdayFix.utils.showLoading();
       
+      myWednesdayFix.data.filterWeek = getWeek();
+      
       myWednesdayFix.comicVine.getIssues({
         callback: function(response) {
           myWednesdayFix.utils.hideLoading();
@@ -532,15 +566,42 @@
       });
     }, 
     
-    comingSoon: function() {
-      myWednesdayFix.utils.setHeadline('Coming Soon');
+    archives: function() {
+      myWednesdayFix.utils.setHeadline('Archives');
+      
+      myWednesdayFix.utils.resetContent();
+      
+      var archivesWeekListHtml = '';
+      
+      $.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], function() {
+        var filterWeek = getWeek(this), 
+        filterWeekStart = filterWeek.startDate;
+        
+        archivesWeekListHtml += '<a class="list-group-item view-archive-week" href="#" data-week="' + this + '">' + 
+                                  '<h4 class="list-group-item-heading">' + 
+                                    'Week of ' + 
+                                    getMonthName(filterWeekStart.getMonth()) + ' ' + 
+                                    filterWeekStart.getDate() + ', ' + 
+                                    filterWeekStart.getFullYear() + 
+                                  '</h4>' + 
+                                '</a>';
+      });
+      
+      $('#content-wrap').append('<div class="panel panel-info">' + 
+                                  '<div id="archives-list">' + 
+                                    archivesWeekListHtml + 
+                                  '</div>' + 
+                                '</div>');
+    }, 
+    
+    archiveWeek: function() {
+      myWednesdayFix.utils.setHeadline('Archives');
       
       myWednesdayFix.utils.resetContent();
       
       myWednesdayFix.utils.showLoading();
       
       myWednesdayFix.comicVine.getIssues({
-        dateFilter: 'future', 
         callback: function(response) {
           myWednesdayFix.utils.hideLoading();
           
@@ -622,6 +683,14 @@
     myWednesdayFix.utils.loadView('viewIssue');
   });
   
+  /* handle onclick event for links that load an archive week */
+  $('#content-wrap').on('click', '.view-archive-week', function(e) {
+    e.preventDefault();
+    
+    myWednesdayFix.data.filterWeek = getWeek($(e.target).closest('a').data('week'));
+    myWednesdayFix.utils.loadView('archiveWeek');
+  });
+  
   /* handle onclick event for links that load a store */
   $('#content-wrap').on('click', '.view-store', function(e) {
     e.preventDefault();
@@ -635,13 +704,12 @@
   $(window).scroll(function() {
     if(($(window).scrollTop() + $(window).height()) > ($(document).height() - 400) && 
        (myWednesdayFix.data.currentView === 'thisWeek' || 
-        myWednesdayFix.data.currentView === 'comingSoon') && 
+        myWednesdayFix.data.currentView === 'archiveWeek') && 
        !myWednesdayFix.data.listIsLoading && 
        !myWednesdayFix.data.isLastListPage) {
       myWednesdayFix.utils.showLoading();
       
       myWednesdayFix.comicVine.getIssues({
-        dateFilter: myWednesdayFix.data.currentView === 'comingSoon' ? 'future' : 'current', 
         offset: myWednesdayFix.data.currentOffset, 
         callback: function(response) {
           myWednesdayFix.utils.hideLoading();
