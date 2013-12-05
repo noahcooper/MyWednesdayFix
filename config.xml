@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<widget xmlns="http://www.w3.org/ns/widgets" xmlns:gap="http://phonegap.com/ns/1.0" id="com.mywednesdayfix" version="0.7.0" versionCode="1">
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:gap="http://phonegap.com/ns/1.0" id="com.mywednesdayfix" version="0.8.0" versionCode="1">
   <name>MyWednesdayFix</name>
   <description>For comic book junkies.</description>
   <author href="http://mywednesdayfix.com" email="app@mywednesdayfix.com">Noah Cooper</author>

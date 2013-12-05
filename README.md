@@ -1,7 +1,7 @@
 MyWednesdayFix
 ==============
 
-Version: 0.7.0 (04-DEC-2013)
+Version: 0.8.0 (05-DEC-2013)
 
 MyWednesdayFix is an app currently under development. It will be available as a web app, and as a native app for iOS and Android devices.
 
@@ -27,5 +27,5 @@ TODOs
  * Don't reload a view if it is already active, just scroll to top
  * Don't run a view's callback if the view is no longer active
  * Fix bug with trimOnPunctuation for sentences containing strings like "Mr." or "F.B.I."
- * Add open graph meta tags
  * Allow for deep-linking to views
+ * Track pageviews in Google Analytics when view changes

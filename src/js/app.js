@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.js
- * Version: 0.7.0 (04-DEC-2013)
+ * Version: 0.8.0 (05-DEC-2013)
  */
 
 (function($) {
