@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.js
- * Version: 0.8.1 (05-DEC-2013)
+ * Version: 0.9.0 (06-DEC-2013)
  */
 
 (function($) {
@@ -43,9 +43,7 @@
   
   /* state info and other app data */
   myWednesdayFix.data = {
-    currentView: 'thisWeek', 
-    
-    filterWeek: getWeek(), 
+    filterWeek: 0, 
     
     currentOffset: 0, 
     
@@ -70,8 +68,9 @@
       
       myWednesdayFix.data.listIsLoading = true;
       
-      var filterWeekStart = settings.filterWeek.startDate, 
-      filterWeekEnd = settings.filterWeek.endDate, 
+      var filterWeek = getWeek(settings.filterWeek), 
+      filterWeekStart = filterWeek.startDate, 
+      filterWeekEnd = filterWeek.endDate, 
       filterString = 'store_date:' + 
                      filterWeekStart.getFullYear() + '-' + 
                      (filterWeekStart.getMonth() + 1) + '-' + 
@@ -164,16 +163,50 @@
   
   /* helper functions */
   myWednesdayFix.utils = {
-    loadView: function(newView, isPopState) {
-      myWednesdayFix.data.currentView = newView;
+    getQueryParam: function(paramName) {
+      var queryParams = window.location.href.split('?')[1], 
+      queryParam;
+      if(queryParams) {
+        queryParams = '&' + queryParams.replace(new RegExp('&' + 'amp;', 'g'), '&');
+        if(queryParams.indexOf('&' + paramName + '=') != -1) {
+           queryParam = queryParams.split('&' + paramName + '=')[1].split('&')[0];
+        }
+      }
+      return queryParam;
+    }, 
+    loadView: function(options) {
+      var settings = $.extend({
+        isPopState: false
+      }, options || {}), 
+      newView = settings.view, 
+      viewDataString = settings.data;
       
-      /* TODO: don't reload if view is already active, just scroll to top */
-      myWednesdayFix.view[newView]();
-      
-      if(window.history && history.pushState && !isPopState) {
-        history.pushState({
-          view: newView
-        }, '', window.location.href.split('?')[0] + '?view=' + newView);
+      if(myWednesdayFix.data.currentView === newView) {
+        $('html, body').animate({
+          scrollTop: 0
+        }, 'slow');
+      }
+      else {
+        myWednesdayFix.data.currentView = newView;
+        
+        myWednesdayFix.utils.resetContent();
+        myWednesdayFix.utils.hideLoading();
+        
+        myWednesdayFix.view[newView]();
+        
+        window.scrollTo(0, 0);
+        
+        if(window.history && history.pushState && !settings.isPopState) {
+          history.pushState({
+            view: newView, 
+            data: viewDataString
+          }, '', window.location.href.split('?')[0] + '?view=' + newView + 
+                 (viewDataString ? ('&' + viewDataString) : ''));
+        }
+        
+        ga('send', 'pageview', {
+          'page': '/' + newView + (viewDataString ? ('?' + viewDataString) : '')
+        });
       }
     }, 
     
@@ -186,7 +219,7 @@
     }, 
     
     setHeadline: function(headlineText) {
-      $('#content-headline').html(headlineText);
+      $('#content-headline').html(headlineText).removeClass('hide');
     }, 
     
     resetContent: function() {
@@ -391,7 +424,7 @@
                                     '</div>' + 
                                     '<form id="store-lookup">' + 
                                       '<div class="form-group">' + 
-                                        '<input type="text" class="form-control" id="lookup-query" placeholder="Enter a city, state, or ZIP code">' + 
+                                        '<input type="text" class="form-control" id="lookup-query" placeholder="Enter a ZIP/Postal Code">' + 
                                       '</div>' + 
                                       '<button type="submit" class="btn btn-default">Search</button>' + 
                                     '</form>' + 
@@ -404,24 +437,38 @@
         
         $('#store-results-list a').remove();
         
-        if($('#lookup-query').val().length > 0) {
+        var queryValue = $('#lookup-query').val();
+        if(queryValue.length > 0) {
           myWednesdayFix.utils.showLoading();
           
           myWednesdayFix.googlePlaces.getComicStores({
-            query: $('#lookup-query').val(), 
+            query: queryValue, 
             callback: function(places) {
-              myWednesdayFix.utils.hideLoading();
-              
-              $.each(places, function() {
-                $('#store-results-list').append('<a class="list-group-item view-store" href="#" data-reference="' + this.reference + '">' + 
-                                                  '<h4 class="list-group-item-heading">' + 
-                                                    this.name + 
-                                                  '</h4>' + 
-                                                  '<p class="list-group-item-text">' + 
-                                                    this.formatted_address.split(', United States')[0] + 
-                                                  '</p>' + 
-                                                '</a>');
-              });
+              if(myWednesdayFix.data.currentView === 'findStore') {
+                myWednesdayFix.utils.hideLoading();
+                
+                $.each(places, function() {
+                  var placeName = this.name, 
+                  placeTypes = this.types || [];
+                  if(placeName && placeName != '' && 
+                     ($.inArray('store', placeTypes) >= 0 || 
+                      $.inArray('book_store', placeTypes) >= 0 || 
+                      $.inArray('establishment', placeTypes) >= 0)) {
+                    $('#store-results-list').append('<a class="list-group-item view-store" href="#" data-reference="' + this.reference + '">' + 
+                                                      '<h4 class="list-group-item-heading">' + 
+                                                        placeName + 
+                                                      '</h4>' + 
+                                                      '<p class="list-group-item-text">' + 
+                                                        this.formatted_address.split(', United States')[0] + 
+                                                      '</p>' + 
+                                                    '</a>');
+                  }
+                });
+                
+                if($('#store-results-list .view-store').length === 0) {
+                  /* TODO: show no results found error */
+                }
+              }
             }
           });
         }
@@ -432,115 +479,122 @@
       var settings = $.extend({
         place: {}
       }, options || {}), 
-      place = settings.place, 
-      phoneNumber = place.formatted_phone_number, 
-      website = place.website, 
-      hours = place.opening_hours, 
-      hasHours = hours ? true : false, 
-      isOpen, 
-      dailyHours, 
-      reviews = place.reviews || [], 
-      totalNumRatings = 0, 
-      totalRating = place.rating;
-      if(hasHours) {
-        isOpen = hours.open_now, 
-        dailyHours = hours.periods;
+      place = settings.place;
+      if(!place) {
+        myWednesdayFix.utils.loadView({
+          view: 'findStore'
+        });
       }
-      if(!totalRating && reviews.length > 0) {
-        $.each(reviews, function() {
-          if(this.rating) {
-            if(!totalRating) {
-              totalRating = 0;
+      else {
+        var phoneNumber = place.formatted_phone_number, 
+        website = place.website, 
+        hours = place.opening_hours, 
+        hasHours = hours ? true : false, 
+        isOpen, 
+        dailyHours, 
+        reviews = place.reviews || [], 
+        totalNumRatings = 0, 
+        totalRating = place.rating;
+        if(hasHours) {
+          isOpen = hours.open_now, 
+          dailyHours = hours.periods;
+        }
+        if(!totalRating && reviews.length > 0) {
+          $.each(reviews, function() {
+            if(this.rating) {
+              if(!totalRating) {
+                totalRating = 0;
+              }
+              totalNumRatings++;
+              totalRating += Number(this.rating);
             }
-            totalNumRatings++;
-            totalRating += Number(this.rating);
-          }
-        });
-        totalRating = Math.round(totalRating / totalNumRatings);
-      }
-      
-      /* TODO: add back to list button */
-      
-      $('#content-wrap').append('<div class="row">' + 
-                                  '<div class="col-xs-12 feature-col">' + 
-                                    myWednesdayFix.ui.buildPanel({
-                                      heading: place.name, 
-                                      body: '<p><span class="glyphicon glyphicon-pushpin"></span> ' + 
-                                            place.formatted_address.split(', United States')[0] + '</p>' + 
-                                            (phoneNumber ? ('<p><span class="glyphicon glyphicon-earphone"></span> ' + 
-                                             phoneNumber + '</p>') : '') + 
-                                            (website ? ('<p><span class="glyphicon glyphicon-globe"></span> ' + 
-                                             '<a target="_blank" href="' + website + '">' + website + '</a></p>') : '') + 
-                                            (hasHours ? 
-                                             ((isOpen ? 
-                                               '<p class="text-success">This store is open now</p>' : 
-                                               '<p class="text-danger">This store is currently closed</p>') + 
-                                              '<p><strong>Hours:</strong></p>' + 
-                                              '<p>Monday: ' + 
-                                              (dailyHours[1] ? 
-                                               (myWednesdayFix.utils.formatTime(dailyHours[1].open.time) + 
-                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[1].close.time)) : 'Closed') + '<br>' + 
-                                              'Tuesday: ' + 
-                                              (dailyHours[2] ? 
-                                               (myWednesdayFix.utils.formatTime(dailyHours[2].open.time) + 
-                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[2].close.time)) : 'Closed') + '<br>' + 
-                                              'Wednesday: ' + 
-                                              (dailyHours[3] ? 
-                                               (myWednesdayFix.utils.formatTime(dailyHours[3].open.time) + 
-                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[3].close.time)) : 'Closed') + '<br>' + 
-                                              'Thursday: ' + 
-                                              (dailyHours[4] ? 
-                                               (myWednesdayFix.utils.formatTime(dailyHours[4].open.time) + 
-                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[4].close.time)) : 'Closed') + '<br>' + 
-                                              'Friday: ' + 
-                                              (dailyHours[5] ? 
-                                               (myWednesdayFix.utils.formatTime(dailyHours[5].open.time) + 
-                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[5].close.time)) : 'Closed') + '<br>' + 
-                                              'Saturday: ' + 
-                                              (dailyHours[6] ? 
-                                               (myWednesdayFix.utils.formatTime(dailyHours[6].open.time) + 
-                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[6].close.time)) : 'Closed') + '<br>' + 
-                                              'Sunday: ' + 
-                                              (dailyHours[0] ? 
-                                               (myWednesdayFix.utils.formatTime(dailyHours[0].open.time) + 
-                                                ' to ' + myWednesdayFix.utils.formatTime(dailyHours[0].close.time)) : 'Closed') + '</p>') : '') + 
-                                            (totalRating ? ('<div id="store-rating">' + 
-                                                              '<p><strong>Rating:</strong></p>' + 
-                                                            '</div>' + 
-                                                            '<div id="store-reviews">' + 
-                                                              '<p><strong>Reviews:</strong></p>' + 
-                                                            '</div>') : '')
-                                    }) + 
-                                  '</div>' + 
-                                '</div>');
-      if(totalRating) {
-        var buildStars = function(numStars) {
-          var starsHtml = '';
-          
-          for(var i = 0; i < 5; i++) {
-            starsHtml += '<span class="glyphicon glyphicon-star' + (i >= numStars ? '-empty' : '') + '"></span>';
-          }
-          
-          return starsHtml;
-        };
+          });
+          totalRating = Math.round(totalRating / totalNumRatings);
+        }
         
-        $('#store-rating').append('<p>' + buildStars(totalRating) + '</p>');
+        /* TODO: add back to list button */
         
-        $.each(reviews, function() {
-          var reviewDate = new Date(0);
-          reviewDate.setUTCSeconds(this.time);
-          $('#store-reviews').append('<div class="store-review-name">' + 
-                                       '<strong>' + this.author_name + '</strong> ' + 
-                                       (reviewDate.getMonth() + 1) + '/' + reviewDate.getDate() + '/' + reviewDate.getFullYear() + 
-                                     '</div>' + 
-                                     (this.rating ? buildStars(this.rating) : '') + 
-                                     '<div class="store-review-text">' + 
-                                       '<p>' + this.text + '</p>' + 
-                                     '</div>');
-        });
+        $('#content-wrap').append('<div class="row">' + 
+                                    '<div class="col-xs-12 feature-col">' + 
+                                      myWednesdayFix.ui.buildPanel({
+                                        heading: place.name, 
+                                        body: '<p><span class="glyphicon glyphicon-pushpin"></span> ' + 
+                                              place.formatted_address.split(', United States')[0] + '</p>' + 
+                                              (phoneNumber ? ('<p><span class="glyphicon glyphicon-earphone"></span> ' + 
+                                               phoneNumber + '</p>') : '') + 
+                                              (website ? ('<p><span class="glyphicon glyphicon-globe"></span> ' + 
+                                               '<a target="_blank" href="' + website + '">' + website + '</a></p>') : '') + 
+                                              (hasHours ? 
+                                               ((isOpen ? 
+                                                 '<p class="text-success">This store is open now</p>' : 
+                                                 '<p class="text-danger">This store is currently closed</p>') + 
+                                                '<p><strong>Hours:</strong></p>' + 
+                                                '<p>Monday: ' + 
+                                                (dailyHours[1] ? 
+                                                 (myWednesdayFix.utils.formatTime(dailyHours[1].open.time) + 
+                                                  ' to ' + myWednesdayFix.utils.formatTime(dailyHours[1].close.time)) : 'Closed') + '<br>' + 
+                                                'Tuesday: ' + 
+                                                (dailyHours[2] ? 
+                                                 (myWednesdayFix.utils.formatTime(dailyHours[2].open.time) + 
+                                                  ' to ' + myWednesdayFix.utils.formatTime(dailyHours[2].close.time)) : 'Closed') + '<br>' + 
+                                                'Wednesday: ' + 
+                                                (dailyHours[3] ? 
+                                                 (myWednesdayFix.utils.formatTime(dailyHours[3].open.time) + 
+                                                  ' to ' + myWednesdayFix.utils.formatTime(dailyHours[3].close.time)) : 'Closed') + '<br>' + 
+                                                'Thursday: ' + 
+                                                (dailyHours[4] ? 
+                                                 (myWednesdayFix.utils.formatTime(dailyHours[4].open.time) + 
+                                                  ' to ' + myWednesdayFix.utils.formatTime(dailyHours[4].close.time)) : 'Closed') + '<br>' + 
+                                                'Friday: ' + 
+                                                (dailyHours[5] ? 
+                                                 (myWednesdayFix.utils.formatTime(dailyHours[5].open.time) + 
+                                                  ' to ' + myWednesdayFix.utils.formatTime(dailyHours[5].close.time)) : 'Closed') + '<br>' + 
+                                                'Saturday: ' + 
+                                                (dailyHours[6] ? 
+                                                 (myWednesdayFix.utils.formatTime(dailyHours[6].open.time) + 
+                                                  ' to ' + myWednesdayFix.utils.formatTime(dailyHours[6].close.time)) : 'Closed') + '<br>' + 
+                                                'Sunday: ' + 
+                                                (dailyHours[0] ? 
+                                                 (myWednesdayFix.utils.formatTime(dailyHours[0].open.time) + 
+                                                  ' to ' + myWednesdayFix.utils.formatTime(dailyHours[0].close.time)) : 'Closed') + '</p>') : '') + 
+                                              (totalRating ? ('<div id="store-rating">' + 
+                                                                '<p><strong>Rating:</strong></p>' + 
+                                                              '</div>' + 
+                                                              '<div id="store-reviews">' + 
+                                                                '<p><strong>Reviews:</strong></p>' + 
+                                                              '</div>') : '')
+                                      }) + 
+                                    '</div>' + 
+                                  '</div>');
+        if(totalRating) {
+          var buildStars = function(numStars) {
+            var starsHtml = '';
+            
+            for(var i = 0; i < 5; i++) {
+              starsHtml += '<span class="glyphicon glyphicon-star' + (i >= numStars ? '-empty' : '') + '"></span>';
+            }
+            
+            return starsHtml;
+          };
+          
+          $('#store-rating').append('<p>' + buildStars(totalRating) + '</p>');
+          
+          $.each(reviews, function() {
+            var reviewDate = new Date(0);
+            reviewDate.setUTCSeconds(this.time);
+            $('#store-reviews').append('<div class="store-review-name">' + 
+                                         '<strong>' + this.author_name + '</strong> ' + 
+                                         (reviewDate.getMonth() + 1) + '/' + reviewDate.getDate() + '/' + reviewDate.getFullYear() + 
+                                       '</div>' + 
+                                       (this.rating ? buildStars(this.rating) : '') + 
+                                       '<div class="store-review-text">' + 
+                                         '<p>' + this.text + '</p>' + 
+                                       '</div>');
+          });
+        }
+        
+        /* TODO: add back to list button */
       }
-      
-      /* TODO: add back to list button */
     }
   };
   
@@ -549,27 +603,27 @@
     thisWeek: function() {
       myWednesdayFix.utils.setHeadline('New This Week');
       
-      myWednesdayFix.utils.resetContent();
-      
       myWednesdayFix.utils.showLoading();
       
-      myWednesdayFix.data.filterWeek = getWeek();
+      myWednesdayFix.data.filterWeek = 0;
       
       myWednesdayFix.comicVine.getIssues({
         callback: function(response) {
-          myWednesdayFix.utils.hideLoading();
-          
-          myWednesdayFix.ui.buildIssuesList({
-            issuesList: response.results
-          });
+          if(myWednesdayFix.data.currentView === 'thisWeek') {
+            if(myWednesdayFix.data.isLastListPage) {
+              myWednesdayFix.utils.hideLoading();
+            }
+            
+            myWednesdayFix.ui.buildIssuesList({
+              issuesList: response.results
+            });
+          }
         }
       });
     }, 
     
     archives: function() {
       myWednesdayFix.utils.setHeadline('Archives');
-      
-      myWednesdayFix.utils.resetContent();
       
       var archivesWeekListHtml = '';
       
@@ -597,34 +651,41 @@
     archiveWeek: function() {
       myWednesdayFix.utils.setHeadline('Archives');
       
-      myWednesdayFix.utils.resetContent();
-      
       myWednesdayFix.utils.showLoading();
       
       myWednesdayFix.comicVine.getIssues({
         callback: function(response) {
-          myWednesdayFix.utils.hideLoading();
-          
-          myWednesdayFix.ui.buildIssuesList({
-            issuesList: response.results
-          });
+          if(myWednesdayFix.data.currentView === 'archiveWeek') {
+            if(myWednesdayFix.data.isLastListPage) {
+              myWednesdayFix.utils.hideLoading();
+            }
+            
+            myWednesdayFix.ui.buildIssuesList({
+              issuesList: response.results
+            });
+          }
         }
       });
     }, 
     
     viewIssue: function() {
-      myWednesdayFix.utils.resetContent();
+      var filterWeek = myWednesdayFix.utils.getQueryParam('filterWeek');
+      if(filterWeek) {
+        myWednesdayFix.utils.setHeadline(filterWeek === '0' ? 'New This Week' : 'Archives');
+      }
       
       myWednesdayFix.utils.showLoading();
       
       myWednesdayFix.comicVine.getIssue({
         issueId: myWednesdayFix.data.currentIssue.issueId, 
         callback: function(response) {
-          myWednesdayFix.utils.hideLoading();
-          
-          myWednesdayFix.ui.buildIssue({
-            issue: response.results
-          });
+          if(myWednesdayFix.data.currentView === 'viewIssue') {
+            myWednesdayFix.utils.hideLoading();
+            
+            myWednesdayFix.ui.buildIssue({
+              issue: response.results
+            });
+          }
         }
       });
     }, 
@@ -632,39 +693,94 @@
     findStore: function() {
       myWednesdayFix.utils.setHeadline('Find a Comic Book Store');
       
-      myWednesdayFix.utils.resetContent();
-      
       myWednesdayFix.ui.buildStoreLookup();
     }, 
     
     viewStore: function() {
-      myWednesdayFix.utils.resetContent();
-      
+      myWednesdayFix.utils.setHeadline('Find a Comic Book Store');
+
       myWednesdayFix.utils.showLoading();
       
       myWednesdayFix.googlePlaces.getComicStore({
         reference: myWednesdayFix.data.currentStore.reference, 
         callback: function(place) {
-          myWednesdayFix.utils.hideLoading();
-          
-          myWednesdayFix.ui.buildStore({
-            place: place
-          });
+          if(myWednesdayFix.data.currentView === 'viewStore') {
+            myWednesdayFix.utils.hideLoading();
+            
+            myWednesdayFix.ui.buildStore({
+              place: place
+            });
+          }
         }
       });
     }
   };
   
-  /* default to the thisWeek view */
-  /* TODO: check for view in URL onload */
-  myWednesdayFix.utils.loadView('thisWeek');
+  var initialView = myWednesdayFix.utils.getQueryParam('view');
+  if(!initialView || !myWednesdayFix.view[initialView]) {
+    myWednesdayFix.utils.loadView({
+      view: 'thisWeek'
+    });
+  }
+  else {
+    var initialViewIsValid = true, 
+    viewDataString;
+    if(initialView === 'viewIssue') {
+      var filterWeek = myWednesdayFix.utils.getQueryParam('filterWeek'), 
+      issueId = myWednesdayFix.utils.getQueryParam('issueId');
+      if(!issueId) {
+        initialViewIsValid = false;
+      }
+      else {
+        myWednesdayFix.data.currentIssue.issueId = issueId;
+        viewDataString = 'filterWeek=' + filterWeek + '&issueId=' + issueId;
+      }
+    }
+    else if(initialView === 'archiveWeek') {
+      var filterWeek = myWednesdayFix.utils.getQueryParam('filterWeek');
+      if(!filterWeek || isNaN(filterWeek) || filterWeek < 0) {
+        initialViewIsValid = false;
+      }
+      else {
+        myWednesdayFix.data.filterWeek = Number(filterWeek);
+        viewDataString = 'filterWeek=' + filterWeek;
+      }
+    }
+    else if(initialView === 'viewStore') {
+      var reference = myWednesdayFix.utils.getQueryParam('reference');
+      if(!reference) {
+        initialViewIsValid = false;
+      }
+      else {
+        myWednesdayFix.data.currentStore.reference = reference;
+        viewDataString = 'reference=' + reference;
+      }
+    }
+    
+    if(!initialViewIsValid) {
+      myWednesdayFix.utils.loadView({
+        view: 'thisWeek'
+      });
+    }
+    else {
+      myWednesdayFix.utils.loadView({
+        view: initialView, 
+        data: viewDataString, 
+        isPopState: true
+      });
+    }
+  }
   
   /* load view onpopstate */
   $(window).on('popstate', function() {
     if(history.state && 
        history.state.view && 
        history.state.view != myWednesdayFix.data.currentView) {
-      myWednesdayFix.utils.loadView(history.state.view, true);
+      myWednesdayFix.utils.loadView({
+        view: history.state.view, 
+        data: history.state.data, 
+        isPopState: true
+      });
     }
   });
   
@@ -672,23 +788,33 @@
   $('.app-nav').click(function(e) {
     e.preventDefault();
     
-    myWednesdayFix.utils.loadView($(this).data('view'));
+    myWednesdayFix.utils.loadView({
+      view: $(this).data('view')
+    });
   });
   
   /* handle onclick event for links that load an issue */
   $('#content-wrap').on('click', '.view-issue', function(e) {
     e.preventDefault();
     
-    myWednesdayFix.data.currentIssue.issueId = $(e.target).closest('a').data('issue');
-    myWednesdayFix.utils.loadView('viewIssue');
+    var issueId = $(e.target).closest('a').data('issue');
+    myWednesdayFix.data.currentIssue.issueId = issueId;
+    myWednesdayFix.utils.loadView({
+      view: 'viewIssue', 
+      data: 'filterWeek=' + myWednesdayFix.data.filterWeek + '&issueId=' + issueId
+    });
   });
   
   /* handle onclick event for links that load an archive week */
   $('#content-wrap').on('click', '.view-archive-week', function(e) {
     e.preventDefault();
     
-    myWednesdayFix.data.filterWeek = getWeek($(e.target).closest('a').data('week'));
-    myWednesdayFix.utils.loadView('archiveWeek');
+    var filterWeek = $(e.target).closest('a').data('week');
+    myWednesdayFix.data.filterWeek = Number(filterWeek);
+    myWednesdayFix.utils.loadView({
+      view: 'archiveWeek', 
+      data: 'filterWeek=' + filterWeek
+    });
   });
   
   /* handle onclick event for links that load a store */
@@ -696,7 +822,10 @@
     e.preventDefault();
     
     myWednesdayFix.data.currentStore.reference = $(e.target).closest('.view-store').data('reference');
-    myWednesdayFix.utils.loadView('viewStore');
+    myWednesdayFix.utils.loadView({
+      view: 'viewStore', 
+      data: 'reference=' + $(e.target).closest('.view-store').data('reference')
+    });
   });
   
   /* when the user is near the bottom of a list view, automatically get the next page of results */
@@ -709,14 +838,19 @@
        !myWednesdayFix.data.isLastListPage) {
       myWednesdayFix.utils.showLoading();
       
+      var currentView = myWednesdayFix.data.currentView;
       myWednesdayFix.comicVine.getIssues({
         offset: myWednesdayFix.data.currentOffset, 
         callback: function(response) {
-          myWednesdayFix.utils.hideLoading();
-          
-          myWednesdayFix.ui.buildIssuesList({
-            issuesList: response.results
-          });
+          if(myWednesdayFix.data.currentView === currentView) {
+            if(myWednesdayFix.data.isLastListPage) {
+              myWednesdayFix.utils.hideLoading();
+            }
+            
+            myWednesdayFix.ui.buildIssuesList({
+              issuesList: response.results
+            });
+          }
         }
       });
     }
