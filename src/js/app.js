@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.js
- * Version: 0.10.0 (06-FEB-2014)
+ * Version: 0.10.1 (06-FEB-2014)
  */
 
 (function($) {
@@ -642,7 +642,7 @@
       });
       
       $('#content-wrap').append('<div class="panel panel-info">' + 
-                                  '<div id="archives-list">' + 
+                                  '<div class="list-group" id="archives-list">' + 
                                     archivesWeekListHtml + 
                                   '</div>' + 
                                 '</div>');
