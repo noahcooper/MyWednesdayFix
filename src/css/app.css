@@ -1,9 +1,10 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.9.0 (06-DEC-2013)
+ * Version: 0.10.0 (06-FEB-2014)
  */
 
 html {
+  overflow-x: hidden;
   overflow-y: scroll;
 }
 body {
@@ -76,6 +77,31 @@ footer .navbar-default {
 }
 .footer-nav-col a:hover {
   text-decoration: none;
+}
+
+@media (max-width: 767px) {
+  body {
+    padding-top: 50px;
+  }
+  .navbar-default {
+    margin-bottom: 0;
+  }
+  #content-container {
+    padding-right: 0;
+    padding-left: 0;
+  }
+  .panel {
+    border-right: none;
+    border-left: none;
+    border-radius: 0;
+  }
+  .panel-heading {
+    border-radius: 0;
+  }
+  .list-group-item:first-child, 
+  .list-group-item:last-child {
+    border-radius: 0;
+  }
 }
 
 @media (max-width: 991px) {
