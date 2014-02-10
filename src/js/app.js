@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.js
- * Version: 0.10.1 (06-FEB-2014)
+ * Version: 0.11.0 (10-FEB-2014)
  */
 
 (function($) {
@@ -134,7 +134,7 @@
       
       if(settings.latLng) {
         placesTextSearchRequest = {
-          location: '', 
+          location: settings.latLng, 
           radius: '40234', /* 40,234 meters = ~25 miles */
           query: 'comic book stores'
         };
@@ -432,6 +432,46 @@
                                   '<div class="list-group" id="store-results-list"></div>' + 
                                 '</div>');
       
+      var getComicStoresCallback = function(places) {
+        if(myWednesdayFix.data.currentView === 'findStore') {
+          myWednesdayFix.utils.hideLoading();
+          
+          $.each(places, function() {
+            var placeName = this.name, 
+            placeTypes = this.types || [];
+            if(placeName && placeName != '' && 
+               ($.inArray('store', placeTypes) >= 0 || 
+                $.inArray('book_store', placeTypes) >= 0 || 
+                $.inArray('establishment', placeTypes) >= 0)) {
+              $('#store-results-list').append('<a class="list-group-item view-store" href="#" data-reference="' + this.reference + '">' + 
+                                                '<h4 class="list-group-item-heading">' + 
+                                                  placeName + 
+                                                '</h4>' + 
+                                                '<p class="list-group-item-text">' + 
+                                                  this.formatted_address.split(', United States')[0] + 
+                                                '</p>' + 
+                                              '</a>');
+            }
+          });
+          
+          if($('#store-results-list .view-store').length === 0) {
+            /* TODO: show no results found error */
+          }
+        }
+      };
+      
+      if(navigator.geolocation) {
+        var getPositionCallback = function(location) {
+          myWednesdayFix.utils.showLoading();
+          
+          myWednesdayFix.googlePlaces.getComicStores({
+            latLng: new google.maps.LatLng(location.coords.latitude, location.coords.longitude), 
+            callback: getComicStoresCallback
+          });
+        };
+        navigator.geolocation.getCurrentPosition(getPositionCallback);
+      }
+      
       $('#store-lookup').submit(function(e) {
         e.preventDefault();
         
@@ -443,33 +483,7 @@
           
           myWednesdayFix.googlePlaces.getComicStores({
             query: queryValue, 
-            callback: function(places) {
-              if(myWednesdayFix.data.currentView === 'findStore') {
-                myWednesdayFix.utils.hideLoading();
-                
-                $.each(places, function() {
-                  var placeName = this.name, 
-                  placeTypes = this.types || [];
-                  if(placeName && placeName != '' && 
-                     ($.inArray('store', placeTypes) >= 0 || 
-                      $.inArray('book_store', placeTypes) >= 0 || 
-                      $.inArray('establishment', placeTypes) >= 0)) {
-                    $('#store-results-list').append('<a class="list-group-item view-store" href="#" data-reference="' + this.reference + '">' + 
-                                                      '<h4 class="list-group-item-heading">' + 
-                                                        placeName + 
-                                                      '</h4>' + 
-                                                      '<p class="list-group-item-text">' + 
-                                                        this.formatted_address.split(', United States')[0] + 
-                                                      '</p>' + 
-                                                    '</a>');
-                  }
-                });
-                
-                if($('#store-results-list .view-store').length === 0) {
-                  /* TODO: show no results found error */
-                }
-              }
-            }
+            callback: getComicStoresCallback
           });
         }
       });
@@ -627,11 +641,12 @@
       
       var archivesWeekListHtml = '';
       
-      $.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], function() {
-        var filterWeek = getWeek(this), 
+      $.each(new Array(52), function(arrayIndex) {
+        var weekIndex = arrayIndex + 1, 
+        filterWeek = getWeek(weekIndex), 
         filterWeekStart = filterWeek.startDate;
         
-        archivesWeekListHtml += '<a class="list-group-item view-archive-week" href="#" data-week="' + this + '">' + 
+        archivesWeekListHtml += '<a class="list-group-item view-archive-week" href="#" data-week="' + weekIndex + '">' + 
                                   '<h4 class="list-group-item-heading">' + 
                                     'Week of ' + 
                                     getMonthName(filterWeekStart.getMonth()) + ' ' + 
@@ -698,7 +713,7 @@
     
     viewStore: function() {
       myWednesdayFix.utils.setHeadline('Find a Comic Book Store');
-
+      
       myWednesdayFix.utils.showLoading();
       
       myWednesdayFix.googlePlaces.getComicStore({
