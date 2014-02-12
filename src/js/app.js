@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.js
- * Version: 0.11.0 (10-FEB-2014)
+ * Version: 0.12.0 (12-FEB-2014)
  */
 
 (function($) {
@@ -54,6 +54,20 @@
     currentIssue: {}, 
     
     currentStore: {}
+  };
+  
+  myWednesdayFix.promos = {
+    getPromos: function(options) {
+      var settings = $.extend({
+        callback: $.noop
+      }, options || {});
+      
+      $.ajax({
+        dataType: 'json', 
+        url: 'http://mywednesdayfix.com/js/promos.json?ts=' + new Date().getTime(), 
+        success: settings.callback
+      });
+    } 
   };
   
   /* comicvine api methods */
@@ -267,6 +281,34 @@
              '</div>';
     }, 
     
+    buildPromos: function(options) {
+      myWednesdayFix.promos.getPromos({
+        callback: function(response) {
+          if(response && response.url && response.heading && response.subheading) {
+            $('#content-wrap').prepend(myWednesdayFix.ui.buildPanel({
+                                         type: 'panel-default promo-panel', 
+                                         body: (response.thumb ? 
+                                                ('<img class="pull-left promo-thumb" alt="" src="' + response.thumb + '">') : 
+                                                '') + 
+                                               '<div class="promo-text">' + 
+                                                 '<a class="promo-link" target="_blank" href="' + response.url + '">' + 
+                                                   response.heading + 
+                                                 '</a><br>' + 
+                                                 '<span class="promo-subhead">' + 
+                                                   response.subheading + 
+                                                 '</span>' + 
+                                                 (response.description ? 
+                                                  ('<br><span class="promo-desc">' + 
+                                                     response.description + 
+                                                   '</span>') : 
+                                                  '') + 
+                                               '</div>'
+                                       }));
+          }
+        }
+      });
+    }, 
+    
     buildIssuesList: function(options) {
       var settings = $.extend({
         issuesList: []
@@ -455,7 +497,9 @@
           });
           
           if($('#store-results-list .view-store').length === 0) {
-            /* TODO: show no results found error */
+            $('#store-results-list').append('<div class="list-group-item">' + 
+                                              '<p class="list-group-item-text">No results found.</p>' + 
+                                            '</div>');
           }
         }
       };
@@ -475,7 +519,7 @@
       $('#store-lookup').submit(function(e) {
         e.preventDefault();
         
-        $('#store-results-list a').remove();
+        $('#store-results-list .list-group-item').remove();
         
         var queryValue = $('#lookup-query').val();
         if(queryValue.length > 0) {
@@ -624,6 +668,8 @@
       myWednesdayFix.comicVine.getIssues({
         callback: function(response) {
           if(myWednesdayFix.data.currentView === 'thisWeek') {
+            myWednesdayFix.ui.buildPromos();
+            
             if(myWednesdayFix.data.isLastListPage) {
               myWednesdayFix.utils.hideLoading();
             }
@@ -869,5 +915,9 @@
         }
       });
     }
+  });
+  
+  $(function() {
+    FastClick.attach(document.body);
   });
 })(jQuery);

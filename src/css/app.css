@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.11.0 (10-FEB-2014)
+ * Version: 0.12.0 (12-FEB-2014)
  */
 
 html {
@@ -30,6 +30,17 @@ body {
   padding: 10px 0 30px;
   text-align: center;
 }
+.promo-thumb {
+  margin-right: 0.75em;
+  width: 85px;
+}
+.promo-subhead {
+  color: #bbbbbb;
+  font-size: 0.82em;
+}
+.promo-desc {
+  font-size: 0.82em;
+}
 .feature-col img {
   width: 100%;
 }
@@ -53,6 +64,12 @@ body {
 }
 #powered-by-google {
   margin-bottom: 3px;
+}
+#store-lookup {
+  clear: both;
+}
+.panel > .list-group .list-group-item:first-child {
+  border-top: 1px solid #ddd;
 }
 footer .navbar-default {
   background-color: #ffffff;
@@ -78,19 +95,34 @@ footer .navbar-default {
   text-decoration: none;
 }
 
+@media (max-width: 480px) {
+  .promo-panel .panel-body {
+    padding: 8px;
+  }
+  .promo-thumb {
+    margin-right: 0.5em;
+  }
+  .promo-link {
+    font-size: 0.82em;
+  }
+}
 @media (max-width: 767px) {
   body {
-    padding-top: 50px;
+    padding-top: 60px;
   }
   .navbar-default {
     margin-bottom: 0;
   }
+  .container > .navbar-header {
+    margin-left: -18px;
+  }
+  #find-store-wrap {
+    margin-right: -5px;
+  }
   .panel {
-    border-right: none;
-    border-left: none;
-    border-radius: 0;
-    margin-right: -15px;
-    margin-left: -15px;
+    margin-right: -6px;
+    margin-bottom: 12px;
+    margin-left: -6px;
   }
   .panel-heading {
     border-radius: 0;
