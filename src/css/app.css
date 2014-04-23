@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.12.0 (12-FEB-2014)
+ * Version: 0.13.0 (23-APR-2014)
  */
 
 html {
@@ -29,17 +29,6 @@ body {
 #content-loading {
   padding: 10px 0 30px;
   text-align: center;
-}
-.promo-thumb {
-  margin-right: 0.75em;
-  width: 85px;
-}
-.promo-subhead {
-  color: #bbbbbb;
-  font-size: 0.82em;
-}
-.promo-desc {
-  font-size: 0.82em;
 }
 .feature-col img {
   width: 100%;
@@ -106,6 +95,7 @@ footer .navbar-default {
     font-size: 0.82em;
   }
 }
+
 @media (max-width: 767px) {
   body {
     padding-top: 60px;

@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.js
- * Version: 0.12.0 (12-FEB-2014)
+ * Version: 0.13.0 (23-APR-2014)
  */
 
 (function($) {
@@ -56,18 +56,77 @@
     currentStore: {}
   };
   
-  myWednesdayFix.promos = {
-    getPromos: function(options) {
+  myWednesdayFix.ads = {
+    insertAdPanels: function() {
+      $('#content-wrap .row:eq(0)').after('<div class="row hidden-xs">' + 
+                                            '<div class="col-sm-12">' + 
+                                              '<div class="panel panel-default hidden" id="ad-panel">' + 
+                                                '<div class="panel-heading">' + 
+                                                  '<h3 class="panel-title">Sponsored</h3>' + 
+                                                '</div>' + 
+                                                '<div class="panel-body"></div>' + 
+                                              '</div>' + 
+                                            '</div>' + 
+                                          '</div>');
+      
+      $('#content-wrap .row:eq(0) .feature-col:eq(1)').after('<div class="col-sm-4 feature-col visible-xs">' + 
+                                                               '<div class="panel panel-default hidden" id="ad-xs-panel">' + 
+                                                                 '<div class="panel-heading">' + 
+                                                                   '<h3 class="panel-title">Sponsored</h3>' + 
+                                                                 '</div>' + 
+                                                                 '<div class="panel-body"></div>' + 
+                                                               '</div>' + 
+                                                             '</div>');
+      
+      myWednesdayFix.ads.toggleAdSizes();
+    }, 
+    
+    buildAd: function(options) {
       var settings = $.extend({
-        callback: $.noop
+        adFormat: 'auto'
       }, options || {});
       
-      $.ajax({
-        dataType: 'json', 
-        url: 'http://mywednesdayfix.com/js/promos.json?ts=' + new Date().getTime(), 
-        success: settings.callback
-      });
-    } 
+      return '<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>' + 
+             '<ins class="adsbygoogle" style="display: block;" ' + 
+             'data-ad-client="ca-pub-3273868854160098" ' + 
+             'data-ad-slot="' + settings.adSlot + '" ' + 
+             'data-ad-format="' + settings.adFormat + '"></ins>' + 
+             '<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>';
+    }, 
+    
+    rebuildAdPanel: function() {
+      $('#ad-panel').removeClass('hidden');
+      $('#ad-panel .panel-body').html(myWednesdayFix.ads.buildAd({
+        adSlot: '8979842732'
+      }));
+    }, 
+    
+    rebuildMobileAdPanel: function() {
+      $('#ad-xs-panel').removeClass('hidden');
+      $('#ad-xs-panel .panel-body').html(myWednesdayFix.ads.buildAd({
+        adSlot: '2933309136'
+      }));
+    }, 
+    
+    toggleAdSizes: function() {
+      var oldWindowWidth = $(window).data('prevwidth'), 
+      newWindowWidth = $(window).width(), 
+      isNowOver1199 = (!oldWindowWidth || oldWindowWidth < 1200) && newWindowWidth > 1199, 
+      isNowUnder1200 = (!oldWindowWidth || oldWindowWidth > 1199) && newWindowWidth < 1200, 
+      isNowOver991 = (!oldWindowWidth || oldWindowWidth < 992) && newWindowWidth > 991, 
+      isNowUnder992 = (!oldWindowWidth || oldWindowWidth > 991) && newWindowWidth < 992, 
+      isNowOver767 = (!oldWindowWidth || oldWindowWidth < 768) && newWindowWidth > 767, 
+      isNowUnder768 = (!oldWindowWidth || oldWindowWidth > 767) && newWindowWidth < 768;
+      
+      if((isNowOver1199 || isNowUnder1200 || isNowOver991 || isNowUnder992 || isNowOver767) && !isNowUnder768) {
+        myWednesdayFix.ads.rebuildAdPanel();
+      }
+      else if(isNowUnder768) {
+        myWednesdayFix.ads.rebuildMobileAdPanel();
+      }
+      
+      $(window).data('prevwidth', newWindowWidth);
+    }
   };
   
   /* comicvine api methods */
@@ -233,7 +292,7 @@
     }, 
     
     setHeadline: function(headlineText) {
-      $('#content-headline').html(headlineText).removeClass('hide');
+      $('#content-headline').html(headlineText).removeClass('hidden');
     }, 
     
     resetContent: function() {
@@ -279,34 +338,6 @@
                    settings.body + 
                  '</div>') : '') + 
              '</div>';
-    }, 
-    
-    buildPromos: function(options) {
-      myWednesdayFix.promos.getPromos({
-        callback: function(response) {
-          if(response && response.url && response.heading && response.subheading) {
-            $('#content-wrap').prepend(myWednesdayFix.ui.buildPanel({
-                                         type: 'panel-default promo-panel', 
-                                         body: (response.thumb ? 
-                                                ('<img class="pull-left promo-thumb" alt="" src="' + response.thumb + '">') : 
-                                                '') + 
-                                               '<div class="promo-text">' + 
-                                                 '<a class="promo-link" target="_blank" href="' + response.url + '">' + 
-                                                   response.heading + 
-                                                 '</a><br>' + 
-                                                 '<span class="promo-subhead">' + 
-                                                   response.subheading + 
-                                                 '</span>' + 
-                                                 (response.description ? 
-                                                  ('<br><span class="promo-desc">' + 
-                                                     response.description + 
-                                                   '</span>') : 
-                                                  '') + 
-                                               '</div>'
-                                       }));
-          }
-        }
-      });
     }, 
     
     buildIssuesList: function(options) {
@@ -668,8 +699,6 @@
       myWednesdayFix.comicVine.getIssues({
         callback: function(response) {
           if(myWednesdayFix.data.currentView === 'thisWeek') {
-            myWednesdayFix.ui.buildPromos();
-            
             if(myWednesdayFix.data.isLastListPage) {
               myWednesdayFix.utils.hideLoading();
             }
@@ -677,6 +706,8 @@
             myWednesdayFix.ui.buildIssuesList({
               issuesList: response.results
             });
+            
+            myWednesdayFix.ads.insertAdPanels();
           }
         }
       });
@@ -887,6 +918,10 @@
       view: 'viewStore', 
       data: 'reference=' + $(e.target).closest('.view-store').data('reference')
     });
+  });
+  
+  $(window).resize(function() {
+    myWednesdayFix.ads.toggleAdSizes();
   });
   
   /* when the user is near the bottom of a list view, automatically get the next page of results */
