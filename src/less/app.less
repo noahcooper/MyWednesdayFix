@@ -1,0 +1,132 @@
+/* 
+ * MyWednesdayFix - app.css
+ * Version: 0.14.0 (20-DEC-2014)
+ */
+
+html {
+  overflow-y: scroll;
+}
+body {
+  background-color: #f0f0f0;
+  padding-top: 70px;
+  padding-bottom: 60px;
+  
+  @media (max-width: 767px) {
+    padding-top: 60px;
+  }
+}
+.navbar-default {
+  background-color: #1f277c;
+  border-color: #666666;
+  
+  @media (max-width: 767px) {
+    margin-bottom: 0;
+  }
+  
+  .navbar-brand {
+    &, 
+    &:hover {
+      color: #ffffff;
+    }
+  }
+}
+#find-store-wrap {
+  padding-top: 10px;
+  
+  @media (max-width: 767px) {
+    margin-right: -5px;
+  }
+}
+#content-headline {
+  font-size: 18px;
+  font-weight: bold;
+}
+#content-loading {
+  padding: 10px 0 30px;
+  text-align: center;
+}
+.feature-col img {
+  width: 100%;
+}
+.feature-image-wrap {
+  margin-bottom: 1em;
+  padding-left: 0;
+  text-align: center;
+  
+  @media (max-width: 991px) {
+    padding-right: 0;
+  }
+}
+.issue-store-date {
+  margin-top: 0;
+}
+.issue-desc {
+  em {
+    font-style: normal;
+  }
+  strong, 
+  b {
+    font-weight: normal;
+  }
+  .table {
+    width: auto;
+  }
+}
+#powered-by-google {
+  margin-bottom: 3px;
+}
+#store-lookup {
+  clear: both;
+}
+.panel {
+  @media (max-width: 767px) {
+    margin-right: -6px;
+    margin-bottom: 12px;
+    margin-left: -6px;
+  }
+  
+  > .list-group .list-group-item:first-child {
+    border-top: 1px solid #ddd;
+  }
+}
+footer .navbar-default {
+  background-color: #ffffff;
+  border-bottom: 0;
+  border-color: #c7c7c7;
+  box-shadow: 0 -1px 3px #cccccc;
+}
+.footer-nav-col {
+  border-right: 1px solid #cccccc;
+  font-size: 1.1em;
+  padding: 0;
+  text-align: center;
+  
+  &:last-child {
+    border-right: none;
+  }
+  
+  a {
+    color: #000000;
+    display: block;
+    padding: 18px 0;
+    
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  .container > .navbar-header {
+    margin-left: -18px;
+  }
+  .panel-heading {
+    border-radius: 0;
+  }
+  .list-group-item {
+    &:first-child, 
+    &:last-child {
+      border-radius: 0;
+    }
+  }
+}
