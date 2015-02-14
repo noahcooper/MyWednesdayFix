@@ -1,7 +1,7 @@
 MyWednesdayFix
 ==============
 
-Version: 0.15.0 (13-FEB-2015)
+Version: 0.16.0 (13-FEB-2015)
 
 MyWednesdayFix is an app currently under development. It will be available as a web app, and as a native app for iOS and Android devices.
 
@@ -15,6 +15,7 @@ The app is built using:
  * The [Google Places API and JavaScript library](https://developers.google.com/maps/documentation/javascript/places) for store lookup
  * [PhoneGap](http://phonegap.com) for iOS and Android native apps
  * [Makeappicon](http://www.makeappicon.com) for creating native app icons
+ * [TiCons](http://ticons.fokkezb.nl) for creating native app splash screens
 
 TODOs
 -----

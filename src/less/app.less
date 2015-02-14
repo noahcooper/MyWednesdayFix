@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.15.0 (13-FEB-2015)
+ * Version: 0.16.0 (13-FEB-2015)
  */
 
 html {
@@ -16,8 +16,8 @@ body {
   }
 }
 .navbar-default {
-  background-color: #1f277c;
-  border-color: #666666;
+  background-color: #d78282;
+  border-bottom: none;
   
   @media (max-width: 767px) {
     margin-bottom: 0;
@@ -28,6 +28,18 @@ body {
     &:hover {
       color: #ffffff;
     }
+  }
+}
+.btn-primary {
+  &, 
+  &.active, 
+  &.focus, 
+  &:active, 
+  &:focus, 
+  &:hover {
+    background-color: #ffffff;
+    border-color: #c11515;
+    color: #c11515;
   }
 }
 #find-store-wrap {
@@ -79,14 +91,32 @@ body {
   clear: both;
 }
 .panel {
+  border-radius: 0;
+  
   @media (max-width: 767px) {
     margin-right: -6px;
     margin-bottom: 12px;
     margin-left: -6px;
   }
   
+  > .panel-heading {
+    border-radius: 0;
+  }
+  
   > .list-group .list-group-item:first-child {
     border-top: 1px solid #ddd;
+  }
+}
+.panel-default {
+  border-color: #c4c4c4;
+}
+.panel-info {
+  border-color: #c4c4c4;
+  
+  > .panel-heading {
+    background: #c11515;
+    border-color: #ffffff;
+    color: #ffffff;
   }
 }
 footer .navbar-default {
@@ -120,9 +150,7 @@ footer .navbar-default {
   .container > .navbar-header {
     margin-left: -18px;
   }
-  .panel-heading {
-    border-radius: 0;
-  }
+  
   .list-group-item {
     &:first-child, 
     &:last-child {
