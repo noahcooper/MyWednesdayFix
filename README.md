@@ -1,7 +1,7 @@
 MyWednesdayFix
 ==============
 
-Version: 0.17.0 (14-FEB-2015)
+Version: 0.18.0 (15-FEB-2015)
 
 MyWednesdayFix is an app currently under development. It will be available as a web app, and as a native app for iOS and Android devices.
 
@@ -24,4 +24,3 @@ TODOs
  * Adjust margin-top in native iOS app to prevent status bar from overlapping the app's navbar
  * Open links (e.g. store websites) in a new browser view in native apps
  * Use -webkit-touch-callout: none to prevent iOS from showing Open dialog when user holds down on a link
- * Add geolocation to native apps

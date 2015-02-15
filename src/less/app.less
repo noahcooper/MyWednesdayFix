@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.17.0 (14-FEB-2015)
+ * Version: 0.18.0 (15-FEB-2015)
  */
 
 html {
@@ -8,11 +8,11 @@ html {
 }
 body {
   background-color: #f0f0f0;
-  padding-top: 70px;
+  padding-top: 60px;
   padding-bottom: 60px;
   
-  @media (max-width: 767px) {
-    padding-top: 60px;
+  @media (min-width: 768px) {
+    padding-top: 70px;
   }
 }
 .navbar-default {
@@ -25,6 +25,7 @@ body {
   
   .navbar-brand {
     &, 
+    &:focus, 
     &:hover {
       color: #ffffff;
     }
@@ -156,5 +157,17 @@ footer .navbar-default {
     &:last-child {
       border-radius: 0;
     }
+  }
+}
+
+.platform-ios {
+  padding-top: 80px;
+  
+  @media (min-width: 768px) {
+    padding-top: 90px;
+  }
+  
+  .navbar-default {
+    padding-top: 20px;
   }
 }
