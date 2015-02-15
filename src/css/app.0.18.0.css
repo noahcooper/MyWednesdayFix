@@ -154,6 +154,6 @@ footer .navbar-default {
     padding-top: 90px;
   }
 }
-.platform-ios .navbar-default {
-  padding-top: 20px;
+.platform-ios .navbar-fixed-top {
+  padding-top: 15px;
 }
