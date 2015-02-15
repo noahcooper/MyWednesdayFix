@@ -734,18 +734,23 @@
   
   if(window.location.href.indexOf('http:') === -1) {
     var getPlatform = function() {
-      if(!window.device || !window.device.platform) {
+      var userAgent = navigator.userAgent;
+      if(!userAgent) {
         return undefined;
       }
       else {
-        return window.device.platform.toLowerCase().replace(/ /g, '-');
+        userAgent = userAgent.toLowerCase();
+        if(userAgent.indexOf('ipod') > -1 || userAgent.indexOf('iphone') > -1 || userAgent.indexOf('ipad') > -1) {
+          return 'ios';
+        }
+        else {
+          return undefined;
+        }
       }
     };
-    document.addEventListener('deviceready', function() {
-      if(getPlatform()) {
-       $('body').addClass('platform-' + getPlatform());
-      }
-    }, false);
+    if(getPlatform()) {
+      $('body').addClass('platform-' + getPlatform());
+    }
   }
   
   var initialView = myWednesdayFix.utils.getQueryParam('view');
