@@ -732,16 +732,20 @@
     }
   };
   
-  var getPlatform = function() {
-    if(!window.device || !window.device.platform) {
-      return undefined;
-    }
-    else {
-      return window.device.platform.toLowerCase().replace(/ /g, '-');
-    }
-  };
-  if(getPlatform()) {
-    $('body').addClass('platform-' + getPlatform());
+  if(window.location.href.indexOf('http:') === -1) {
+    var getPlatform = function() {
+      if(!window.device || !window.device.platform) {
+        return undefined;
+      }
+      else {
+        return window.device.platform.toLowerCase().replace(/ /g, '-');
+      }
+    };
+    document.addEventListener('deviceready', function() {
+      if(getPlatform()) {
+       $('body').addClass('platform-' + getPlatform());
+      }
+    }, false);
   }
   
   var initialView = myWednesdayFix.utils.getQueryParam('view');
