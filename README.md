@@ -1,7 +1,7 @@
 MyWednesdayFix
 ==============
 
-Version: 0.18.0 (15-FEB-2015)
+Version: 0.19.0 (08-MAR-2015)
 
 MyWednesdayFix is an app currently under development. It will be available as a web app, and as a native app for iOS and Android devices.
 
@@ -13,14 +13,11 @@ The app is built using:
  * [Bootstrap](http://getbootstrap.com) for UI components
  * The [ComicVine API](http://comicvine.com/api) for book data
  * The [Google Places API and JavaScript library](https://developers.google.com/maps/documentation/javascript/places) for store lookup
- * [PhoneGap](http://phonegap.com) for iOS and Android native apps
- * [Makeappicon](http://www.makeappicon.com) for creating native app icons
- * [TiCons](http://ticons.fokkezb.nl) for creating native app splash screens
+ * [PhoneGap](http://phonegap.com) for packaging native apps
+ * [TiCons](http://ticons.fokkezb.nl) for creating native app icons and splash screens
 
 TODOs
 -----
 
  * Fix bug with trimOnPunctuation for sentences containing strings like "Mr." or "F.B.I."
- * Adjust margin-top in native iOS app to prevent status bar from overlapping the app's navbar
- * Open links (e.g. store websites) in a new browser view in native apps
  * Use -webkit-touch-callout: none to prevent iOS from showing Open dialog when user holds down on a link
