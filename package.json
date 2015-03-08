@@ -1,7 +1,7 @@
 {
   "name": "mywednesdayfix",
   "description": "For comic book junkies.",
-  "version": "0.19.4",
+  "version": "0.19.5",
   "devDependencies": {
     "glob": "^4.0.6",
     "grunt": "^0.4.5",
