@@ -1,7 +1,7 @@
 MyWednesdayFix
 ==============
 
-Version: 0.21.1 (09-MAR-2015)
+Version: 0.21.2 (09-MAR-2015)
 
 MyWednesdayFix is an app currently under development. It will be available as a web app, and as a native app for iOS and Android devices.
 

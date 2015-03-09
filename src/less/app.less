@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.21.1 (09-MAR-2015)
+ * Version: 0.21.2 (09-MAR-2015)
  */
 
 html {
@@ -53,17 +53,26 @@ body {
 }
 #content-headline-back {
   background: #f4e9c9;
-  border-right: 1px solid #c4c4c4;
   margin: -15px 15px -15px -15px;
+  text-align: center;
   height: 50px;
+  width: 0;
+  overflow: hidden;
+  transition: width 100ms ease-in-out;
+  
+  &.transition-in {
+    width: 85px;
+  }
   
   a {
+    border-right: 1px solid #c4c4c4;
     color: #000000;
     text-transform: uppercase;
     font-size: 13px;
     display: block;
     padding: 17px 15px 0;
     height: 50px;
+    width: 85px;
     
     &:hover, 
     &:focus {
