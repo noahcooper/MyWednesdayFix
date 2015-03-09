@@ -1,6 +1,6 @@
 /* 
  * MyWednesdayFix - app.css
- * Version: 0.20.0 (08-MAR-2015)
+ * Version: 0.21.0 (09-MAR-2015)
  */
 
 html {
@@ -49,6 +49,26 @@ body {
   
   @media (max-width: 767px) {
     margin-right: -5px;
+  }
+}
+#content-headline-back {
+  background: #f4e9c9;
+  border-right: 1px solid #c4c4c4;
+  margin: -15px 15px -15px -15px;
+  height: 50px;
+  
+  a {
+    color: #000000;
+    text-transform: uppercase;
+    font-size: 13px;
+    display: block;
+    padding: 17px 15px 0;
+    height: 50px;
+    
+    &:hover, 
+    &:focus {
+      text-decoration: none;
+    }
   }
 }
 #content-headline {
@@ -142,7 +162,8 @@ footer .navbar-default {
     display: block;
     padding: 18px 0;
     
-    &:hover {
+    &:hover, 
+    &:focus {
       text-decoration: none;
     }
   }
