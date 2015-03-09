@@ -1,7 +1,7 @@
 MyWednesdayFix
 ==============
 
-Version: 0.21.0 (09-MAR-2015)
+Version: 0.21.1 (09-MAR-2015)
 
 MyWednesdayFix is an app currently under development. It will be available as a web app, and as a native app for iOS and Android devices.
 
@@ -20,7 +20,6 @@ TODOs
 -----
 
  * Don't insert HTML if view does not match the data loaded
- * Add event listener for Back button click
  * Fix bug with trimOnPunctuation for sentences containing strings like "Mr." or "F.B.I."
  * Use -webkit-touch-callout: none to prevent iOS from showing Open dialog when user holds down on a link
  * Prevent header from jumping on iOS when margin-top is adjusted
